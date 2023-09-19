@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "294722682616",
+    "project_id": "project-cosmic-hamster",
+    "storage_bucket": "project-cosmic-hamster.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:294722682616:android:8dd1a954afb26d220ac50d",
+        "android_client_info": {
+          "package_name": "com.fishinspace.projectcosmichamster"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "294722682616-9ceba4qtqeukso3l618g57lfo8buc43g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz7IhmTj7jkB4OrlRt5GRuRtobq-DWsiQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "294722682616-9ceba4qtqeukso3l618g57lfo8buc43g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

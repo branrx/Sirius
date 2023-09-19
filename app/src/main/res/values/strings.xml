@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Sirius</string>
+    <string name="webclient_id">294722682616-24h4lk3r9jneqr7opt270c1mn8qr55ru.apps.googleusercontent.com</string>
+    <string name="organisation_name" translatable="false">Fish In Space</string>
+    <string name="author_name" translatable="false">Brandon Simoko</string>
+    <string name="app_version" translatable="false">Version: 1.0</string>
+    <string name="year" translatable="false">2023</string>
+    <string name="title_activity_maps">MapsActivity</string>
+</resources>
