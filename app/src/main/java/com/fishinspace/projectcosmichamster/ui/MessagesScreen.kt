@@ -213,7 +213,7 @@ fun ChatsComposable(friend: UserClass)
     val rowValue = remember{ androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(Unit)
     {
-        rowValue.animateTo(1f, animationSpec = tween(1000, easing = FastOutLinearInEasing))
+        rowValue.animateTo(1f, animationSpec = tween(500, easing = FastOutLinearInEasing))
     }
 
     val pic = appViewModel.friendProfilePictures[friend.uid]

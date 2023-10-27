@@ -3,11 +3,13 @@ package com.fishinspace.projectcosmichamster.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,18 +42,18 @@ fun AboutScreen()
                     .weight(0.8f)
                     .fillMaxSize())
             {
-
+                Spacer(modifier = Modifier.weight(0.1f))
                 Column(modifier = Modifier
-                    .aspectRatio(1f)
+                    //.aspectRatio(1f)
                     .requiredSize(160.dp))
                 {
-                    Image(
+                    Icon(
                         painter = painterResource(id = R.drawable.cirqle_logo_3),
                         contentDescription = "coffee reminder logo",
                         modifier = Modifier,
-                        contentScale = ContentScale.FillBounds
                     )
                 }
+                Spacer(modifier = Modifier.weight(0.03f))
                 Text(
                     text = stringResource(id = R.string.app_name),
                     fontSize = 52.sp,
@@ -92,7 +94,7 @@ fun AboutScreen()
             Column(horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
-                    .weight(0.3f)
+                    .weight(0.4f)
                     .fillMaxSize()
                     .padding(bottom = 24.dp))
             {

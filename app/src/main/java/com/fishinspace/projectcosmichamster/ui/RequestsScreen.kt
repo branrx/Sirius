@@ -127,7 +127,7 @@ fun RequestsScreen()
             }
         }
 
-        Column(modifier = Modifier.fillMaxWidth()
+        /*Column(modifier = Modifier.fillMaxWidth()
             .weight(0.1f),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom
         )
@@ -140,7 +140,7 @@ fun RequestsScreen()
             }
             }
             )
-        }
+        }*/
 
         //  navigation bar
         Row(modifier = Modifier

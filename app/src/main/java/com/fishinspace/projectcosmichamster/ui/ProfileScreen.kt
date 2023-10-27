@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseInExpo
 import androidx.compose.animation.core.EaseOutExpo
@@ -15,7 +16,10 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -36,8 +40,10 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +54,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,7 +84,10 @@ import java.util.concurrent.Executors
 var cardColorDark = Color(30, 30,34)
 
 var fieldNames = listOf<String>("username", "name", "surname", "age", "gender",
-"major", "school", "year", "bio")
+    "major", "school", "year", "bio")
+
+var fillFieldNames = listOf<String>("username", "name", "surname", "age", "gender",
+"major", "school", "year", "bio", "picture")
 
 var fieldEntry = mutableMapOf<String, String>("username" to "", "name" to "", "surname" to "", "age" to "", "gender" to "",
     "major" to "", "school" to "", "year" to "", "bio" to "")
@@ -88,6 +98,8 @@ var editField = mutableStateOf("")
 @Composable
 fun ProfileScreen()
 {
+    //  Dropdown variable holder
+    var dropDownVar by remember { mutableStateOf("---")}
 
     var editMode by remember{ mutableStateOf(false)}
     var editPicture by remember{ mutableStateOf(false)}
@@ -130,10 +142,11 @@ fun ProfileScreen()
 
     Column(modifier = Modifier
         .fillMaxSize()
-        .background(MaterialTheme.colorScheme.surface))
+        .background(MaterialTheme.colorScheme.surface),
+    horizontalAlignment = Alignment.CenterHorizontally)
     {
-        androidx.compose.animation.AnimatedVisibility(visible = !alpha2 && !alpha3, exit = fadeOut(tween(250)),
-            enter = slideInVertically(tween(250))
+        androidx.compose.animation.AnimatedVisibility(visible = true/*!alpha2 && !alpha3*/, exit = fadeOut(tween(250)),
+            enter = fadeIn(tween(250))
         )
         {
             //  top bar
@@ -145,7 +158,7 @@ fun ProfileScreen()
             }
         }
 
-        androidx.compose.animation.AnimatedVisibility(visible = !alpha2 && !alpha3, exit = fadeOut(tween(200)),
+        androidx.compose.animation.AnimatedVisibility(visible = true/*!alpha2 && !alpha3*/, exit = fadeOut(tween(200)),
             enter = fadeIn(tween(200))
         )
         {
@@ -172,7 +185,6 @@ fun ProfileScreen()
             }
         }
 
-
         /*Button(onClick = { appViewModel.uploadProfile() }, modifier = Modifier.weight(0.1f)) {
             Text("Upload")
         }
@@ -183,50 +195,69 @@ fun ProfileScreen()
         //  messages list
         Column(modifier = Modifier
             .weight(0.7f)
-            .animateContentSize()
-            .padding(top = 0.dp))
+            //.verticalScroll(rememberScrollState(), enabled = true)
+            .padding(top = 0.dp),
+        verticalArrangement = Arrangement.Center)
         {
             Box(modifier = Modifier)
             {
                 //chatsComposable()
-                LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.alpha(alpha1))
-                {
-                    item{
-                        //  profile picture composable
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .requiredHeight(120.dp)
-                                .fillMaxSize())
-                        {
-                            profilePictureComposable(galleryPicker, onClick = { galleryPicker.launch("image/*")})
-                        }
-                    }
-                    items(fieldNames.size)
-                    {
-                            item -> var temp by remember{ mutableStateOf("")};profileInfoComposable(fieldNames[item], Modifier.fillMaxHeight(0.1f),
-                        value = temp, onChange={temp=it}, index = item, onClick = {editMode = !editMode; editField.value = it})
-                    }
-
-                    item{
-                        //  profile picture composable
-                        Spacer(modifier = Modifier.requiredHeight(62.dp))
-                    }
-                }
-
-                ElevatedButton(onClick = { appViewModel.saveEdits() },modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(0.6f)
-                    .alpha(alpha1)
-                    .padding(bottom = 4.dp, end = 16.dp)
+                androidx.compose.animation.AnimatedVisibility(visible = !alpha2 && !alpha3, exit = fadeOut(tween(250, easing = LinearEasing)),
+                    enter = fadeIn(tween(250, easing = LinearEasing, delayMillis = 0))
                 )
                 {
-                    Text(text = "Save", modifier = Modifier, fontFamily = bison,
-                        fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp, fontSize = 16.sp
-                    )
+                    LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.alpha(alpha1))
+                    {
+                        item{
+                            //  profile picture composable
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+                                modifier = Modifier
+                                    .requiredHeight(120.dp)
+                                    .fillMaxSize())
+                            {
+                                profilePictureComposable(galleryPicker, onClick = { galleryPicker.launch("image/*")})
+                            }
+                        }
+                        items(fieldNames.size)
+                        {
+                                item -> var temp by remember{ mutableStateOf("")};
+                            profileInfoComposable(fieldNames[item], Modifier.fillMaxHeight(0.1f),
+                                value = temp, onChange={temp=it}, index = item, onClick = {editMode = !editMode; editField.value = it})
+                        }
+
+                        item{
+                            Column(horizontalAlignment = Alignment.End,
+                                modifier = Modifier
+                                    .padding(top = 12.dp, bottom = 4.dp)
+                                    .fillMaxWidth()
+                                //.background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp))
+                            )
+                            {
+                                Surface(color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                                )
+                                {
+                                    ElevatedButton(onClick = { appViewModel.saveEdits() },modifier = Modifier
+                                        .alpha(alpha1)
+                                        .fillMaxWidth()
+                                        .padding(start = 4.dp, end = 4.dp),
+                                        shape = RoundedCornerShape(12.dp)
+                                        //.padding(bottom = 4.dp, end = 16.dp)
+                                    )
+                                    {
+                                        Text(text = "Save", modifier = Modifier, fontFamily = bison,
+                                            fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp, fontSize = 16.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 androidx.compose.animation.AnimatedVisibility(visible = alpha2, exit = fadeOut(tween(250, easing = LinearEasing)),
-                    enter = fadeIn(tween(250, easing = LinearEasing))
+                    enter = fadeIn(tween(250, easing = LinearEasing, delayMillis = 200))
                 )
                 {
                     //  edit mode text
@@ -236,78 +267,25 @@ fun ProfileScreen()
                             .alpha(1f)
                             .padding(bottom = 8.dp))
                     {
-                        Surface(modifier = Modifier
-                            .fillMaxWidth(0.35f)
-                            .padding(8.dp), shape = RoundedCornerShape(50),
-                            border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.inversePrimary)))
-                        )
-                        {
-                            Row(modifier = Modifier
-                                .padding(4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center)
-                            {
-                                Text(text = "PROFILE", fontFamily = bison, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp)
-                            }
-                        }
-                        Spacer(modifier = Modifier.weight(0.5f))
-
-                        Text(text = editField.value, modifier = Modifier.padding(bottom = 0.dp),
+                        //Spacer(modifier = Modifier.weight(0.5f))
+                        Text(text = editField.value, modifier = Modifier.padding(bottom = 16.dp),
                             fontFamily = bison, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
                             fontSize = 18.sp)
 
-                        Column(modifier = Modifier
-                            .padding(top = 12.dp)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .requiredWidth(300.dp)
-                            .requiredHeight(40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center)
+                        AnimatedVisibility(visible = editField.value!="school" && editField.value != "year"
+                                && editField.value != "gender")
                         {
-                            BasicTextField(value = value, onValueChange = {value = it}, modifier = Modifier.fillMaxWidth(),
-                                textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center),
-                                cursorBrush = Brush.sweepGradient(listOf(Color.White, Color.White))
-                            )
+                            TextInputComposable(value = value, onChange = {value = it})
                         }
 
-                        Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.requiredWidth(300.dp))
-
-                        Spacer(modifier = Modifier.weight(0.9f))
-
-                        Row(modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically)
+                        AnimatedVisibility(visible = editField.value=="school" || editField.value == "year"
+                                || editField.value == "gender")
                         {
-                            ElevatedButton(onClick = {
-                                if(value.isNotEmpty())
-                                {
-                                    value = ""
-                                }
-                                editMode = !editMode
-                            }, modifier = Modifier
-                                .weight(0.4f)
-                                .padding(end = 2.dp)
-                                .padding(bottom = 0.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
-                            )
-                            {
-                                Text("Cancel", fontFamily = bison,
-                                    fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
-                            }
-
-                            ElevatedButton(onClick = {
-                                if(value.isNotEmpty())
-                                {
-                                    editMode = !editMode; if(alpha2){appViewModel.setEdit(editField.value, value)}
-                                    value = ""
-                                }
-                            }, modifier = Modifier
-                                .fillMaxWidth(0.6f)
-                                .padding(start = 2.dp)
-                                .padding(bottom = 0.dp),
-                            )
-                            {
-                                Text("Done", fontFamily = bison,
-                                    fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
-                            }
+                            DropSelectMenu(onSelect = { dropDownVar = it; value = it}, dropDownVar = dropDownVar,
+                                fieldName = editField.value)
                         }
+
+                        //Spacer(modifier = Modifier.weight(0.9f))
 
                     }
                 }
@@ -349,44 +327,7 @@ fun ProfileScreen()
 
                         Spacer(modifier = Modifier.weight(0.9f))
 
-                        Row(modifier = Modifier
-                            .padding(top = 0.dp)
-                            .fillMaxWidth(0.7f), horizontalArrangement = Arrangement.End)
-                        {
-                            ElevatedButton(onClick = { appViewModel.cancelProfileChange(); editPicture = !editPicture },
-                                modifier = Modifier
-                                    .weight(0.4f)
-                                    .padding(end = 2.dp)
-                                    .padding(bottom = 0.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
-                            )
-                            {
-                                Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically)
-                                {
-                                    Text("Cancel", fontFamily = bison,
-                                        fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
-                                }
-                            }
 
-                            ElevatedButton(onClick = {
-                                                     Executors.newSingleThreadExecutor().execute {
-                                                         appViewModel.uploadProfile()
-                                                         editPicture = !editPicture
-                                                     }
-                            },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.6f)
-                                    .padding(start = 2.dp)
-                                    .padding(bottom = 0.dp),
-                            )
-                            {
-                                Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically)
-                                {
-                                    Text("Done", fontFamily = bison,
-                                        fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
-                                }
-                            }
-                        }
                     }
                 }
                 /*//  shows a loading animation
@@ -407,8 +348,53 @@ fun ProfileScreen()
             saveButtonComposable()
         }*/
 
-        androidx.compose.animation.AnimatedVisibility(visible = !alpha2 && !alpha3, exit = fadeOut(tween(250)),
-            enter = slideInVertically(tween(250))
+        androidx.compose.animation.AnimatedVisibility(visible = alpha2, exit = slideOutHorizontally(tween(200)),
+            enter = slideInHorizontally(tween(200, delayMillis = 200))
+        ){
+            Row(modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically)
+            {
+                ElevatedButton(onClick = {
+                    if(value.isNotEmpty())
+                    {
+                        value = ""
+                    }
+                    editMode = !editMode
+                }, modifier = Modifier
+                    .weight(0.4f)
+                    .padding(end = 2.dp)
+                    .padding(bottom = 0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
+                )
+                {
+                    Text("Cancel", fontFamily = bison,
+                        fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
+                }
+
+                ElevatedButton(onClick = {
+                    if(value.isNotEmpty())
+                    {
+                        dropDownVar = "---"
+                        editMode = !editMode;
+                        if(alpha2){appViewModel.setEdit(editField.value, value)}
+                        value = ""
+                    }
+                }, modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .padding(start = 2.dp)
+                    .padding(bottom = 0.dp),
+                )
+                {
+                    Text("Done", fontFamily = bison,
+                        fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
+                }
+            }
+        }
+
+
+        androidx.compose.animation.AnimatedVisibility(visible = !alpha2 && !alpha3, exit = slideOutHorizontally(tween(200)),
+            enter = slideInHorizontally(tween(200))
         )
         {
             //  navigation bar
@@ -417,6 +403,39 @@ fun ProfileScreen()
                 .fillMaxWidth())
             {
                 navigationComposable()
+            }
+        }
+    }
+}
+
+@Composable
+fun TextInputComposable(value: String, onChange: (String)->Unit)
+{
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    Row(modifier = Modifier
+        .fillMaxWidth(0.7f)
+        .padding(top = 16.dp)
+        , verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center)
+    {
+        Surface(modifier = Modifier,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            shape = RoundedCornerShape(8.dp)
+        )
+        {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .weight(0.8f),
+                verticalAlignment = Alignment.CenterVertically
+            )
+            {
+                BasicTextField(value = value, onValueChange = onChange, modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center,
+                        fontFamily = yanone, fontSize = 18.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Normal),
+                    cursorBrush = Brush.sweepGradient(listOf(onSurface, onSurface)),
+                    singleLine = true
+                )
             }
         }
     }
@@ -434,7 +453,9 @@ fun loadingOverlay()
     )
 
     Surface(shape = RoundedCornerShape(50),
-        modifier = Modifier.aspectRatio(1f).requiredSize(40.dp)
+        modifier = Modifier
+            .aspectRatio(1f)
+            .requiredSize(40.dp)
             .rotate(rotationAnimation.value),
         border = BorderStroke(4.dp,
             brush = Brush.sweepGradient(listOf(MaterialTheme.colorScheme.surface,
@@ -479,7 +500,7 @@ fun profilePictureComposable(galleryPicker: ManagedActivityResultLauncher<String
                     .clickable {
                         galleryPicker.launch("image/*")
                     },
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
             )
         }
         Row(modifier = Modifier
@@ -496,14 +517,14 @@ fun profilePictureComposable(galleryPicker: ManagedActivityResultLauncher<String
                         .scale(0.2f)
                         .alpha(0.7f)
                         .rotate(rotationAnimation.value),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.inversePrimary
                 )
             }   else{
                 Icon(painter = painterResource(id = R.drawable.camera_svgrepo_com__1_), contentDescription = "edit icon",
                     modifier = Modifier
                         .scale(0.2f)
                         .alpha(0.7f),
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.inversePrimary,
                 )
             }
         }
@@ -520,41 +541,44 @@ fun profileInfoComposable(fieldName: String, modifier: Modifier, value: String, 
     var fieldText = appViewModel.getField(fieldName)
     Surface(modifier = Modifier
         .fillMaxSize()
-        .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-        .requiredHeight(60.dp),
+        .padding(top = 4.dp, start = 8.dp, end = 8.dp),
         shape = RoundedCornerShape(20),
-        color = MaterialTheme.colorScheme.surface
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp)
     )
     {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier
             //.fillMaxSize().border(0.dp, color = brown, shape = RoundedCornerShape(12.dp))
         )
         {
-            Column(verticalArrangement = Arrangement.Center, modifier = Modifier
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Transparent)
                 .weight(0.7f))
             {
-                Column(verticalArrangement = Arrangement.Bottom, modifier = Modifier
+                Column(verticalArrangement = Arrangement.Top, modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Transparent)
-                    .weight(0.4f))
+                    .fillMaxHeight()
+                    .weight(0.5f))
                 {
-                    Text(text = fieldName.uppercase(Locale.getDefault()), modifier = Modifier.padding(start = 16.dp),
+                    Text(text = fieldName.uppercase(Locale.getDefault()), modifier = Modifier
+                        .padding(start = 16.dp)
+                        .alpha(0.6f),
                         fontFamily = yanone, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp,
                         fontSize = 16.sp
                     )
+                    //Spacer(modifier = Modifier.weight(0.5f))
                 }
 
-                Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(start = 16.dp, end = 40.dp, top = 4.dp))
+                //Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(start = 16.dp, end = 40.dp, top = 4.dp))
 
                 Column(verticalArrangement = Arrangement.Center, modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Transparent)
-                    .weight(0.6f))
+                    .padding(start = 2.dp, top = 4.dp, bottom = 4.dp, end = 4.dp)
+                    .weight(0.8f))
                 {
-                    Text(text = fieldText, modifier = Modifier.padding(start = 16.dp),
-                        fontFamily = yanone, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp
+                    Text(text = fieldText, modifier = Modifier.alpha(0.9f),
+                        fontFamily = yanone, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp
                     )
                 }
 
@@ -578,7 +602,9 @@ fun profileInfoComposable(fieldName: String, modifier: Modifier, value: String, 
             )
             {
                 ElevatedButton(onClick = { onClick(fieldName) },
-                    shape = RoundedCornerShape(topStartPercent = 16, topEndPercent = 50, bottomStartPercent = 16, bottomEndPercent = 50))
+                    shape = RoundedCornerShape(topStartPercent = 16, topEndPercent = 20, bottomStartPercent = 16, bottomEndPercent = 20),
+                    modifier = Modifier.padding(end = 4.dp)
+                )
                 {
                     Text(text = "|edit", modifier = Modifier
                         .padding(end = 0.dp),

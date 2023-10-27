@@ -795,7 +795,7 @@ class AppViewModel : ViewModel()
                     setupFences()
 
                     //  start app background service
-                    //activityContext.startService(serviceIntent)
+                    activityContext.startService(serviceIntent)
                     try{
                         userProfilePicture = getUserImage()
                         updateEdits()

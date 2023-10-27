@@ -142,6 +142,10 @@ enum class MessageType {
     NORMAL, POST_REPLY
 }
 
+enum class PasswordType {
+    NORMAL, RE_ENTRY
+}
+
 fun getDefaultImage(): ImageBitmap
 {
     var path = "/sdcard/Pictures/ellie.jpg"

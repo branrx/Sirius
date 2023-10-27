@@ -8,7 +8,9 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.LinearEasing
@@ -22,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -75,6 +78,13 @@ class MainActivity : ComponentActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
+    override fun onBackPressed() {
+        super.onBackPressed()
+
+        //onBackPressedDispatcher.addCallback(onBackPressedCallback = OnBackPressedCallback.)
+        Log.d("back pressed", "back pressed")
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -84,6 +94,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    //WindowCompat.setDecorFitsSystemWindows(window, false)
                     //  Initiate ads
                     //MobileAds.initialize(this)
 
@@ -115,7 +126,7 @@ class MainActivity : ComponentActivity() {
 
                     //  Create foreground service intent
                     //  Handles: messages, discoveries while app is in background
-                    //serviceIntent = Intent(this, ChatBackgroundService::class.java)
+                    serviceIntent = Intent(this, ChatBackgroundService::class.java)
 
                     //  Create notification channels for discovery and messages
                     createNotificationChannel("1", "new discovery")
@@ -123,6 +134,7 @@ class MainActivity : ComponentActivity() {
 
                     //  Initiate nagivation framework
                     navController = rememberNavController()
+                    navController.enableOnBackPressed(true)
                     NavigationAppHost(navController)
 
                 }
@@ -156,7 +168,7 @@ sealed class Destination(val route: String)
 @Composable
 fun NavigationAppHost(navController: NavHostController)
 {
-    NavHost(navController = navController, startDestination = "signin_screen", enterTransition = {
+    NavHost(navController = navController, startDestination = "explore_screen", enterTransition = {
       fadeIn(animationSpec = tween(250, 0, easing = LinearEasing))
     }, exitTransition = {
         fadeOut(animationSpec = tween(250, 0, easing = LinearEasing))

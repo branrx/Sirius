@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -87,9 +89,11 @@ val filterOptions = mapOf(0 to "mine", 1 to "academic", 2 to "accommodation")
 fun HomeScreen()
 {
     var filterBy by remember { mutableStateOf("none") }
-    var currentView by remember { mutableStateOf("board")}
+    var currentView by remember { mutableStateOf("discover")}
     val listA by appViewModel.discoveredDetailList.collectAsState()
     val postsList by appViewModel.postsList.collectAsState()
+    val postsCount = postsList.postsCount
+    val usersCount = listA.discoveredCount
     Log.d("discovered count -- Request", listA.discoveredCount.toString())
     Log.d("posts count", postsList.postsCount.toString())
 
@@ -134,47 +138,77 @@ fun HomeScreen()
         }
 
         //  Filter composable
-        Column(modifier = Modifier
-            .weight(0.12f)
-            .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        )
+        AnimatedVisibility(visible = currentView == "board",
+            modifier = Modifier
+                .weight(0.15f))
         {
-            Row(modifier = Modifier
-                .weight(0.5f)
-                .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start)
-            {
-                Icon(painter = painterResource(id = R.drawable.filter_svgrepo_com), contentDescription = "filter posts icon",
-                    modifier = Modifier
-                        .clipToBounds()
-                        .fillMaxHeight()
-                        .padding(start = 10.dp, top = 3.5.dp, bottom = 3.5.dp)
-                        .alpha(0.8f))
-                Text("filter", modifier = Modifier
-                    .padding(start = 8.dp, end = 4.dp)
-                    .alpha(0.8f),
-                    fontFamily = bison,
-                    letterSpacing = 1.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .padding(start = 0.dp, top = 4.dp, bottom = 4.dp)
-                    .alpha(0.4f)
+            Surface(modifier = Modifier
+                .padding(start = 4.dp, end = 4.dp),
+                color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                shape = RoundedCornerShape(16.dp)
             )
-
-            LazyHorizontalGrid(rows = GridCells.Fixed(1),
-                modifier = Modifier
-                    .padding(start = 0.dp, end = 8.dp)
-                    .weight(0.6f)
-                    .fillMaxWidth(), horizontalArrangement = Arrangement.Start)
             {
-                items(filterOptions.size)
+                Column(modifier = Modifier
+                    .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                )
                 {
-                        item ->  FilterComposable(item, onClick = { if(filterBy==it){filterBy="none"}else{filterBy=it} }, filterBy)
+                    Row(modifier = Modifier
+                        .weight(0.5f)
+                        .padding(4.dp)
+                        .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start)
+                    {
+                        Icon(painter = painterResource(id = R.drawable.filter_svgrepo_com), contentDescription = "filter posts icon",
+                            modifier = Modifier
+                                .clipToBounds()
+                                .fillMaxHeight()
+                                .padding(start = 10.dp, top = 3.5.dp, bottom = 3.5.dp)
+                                .alpha(0.8f))
+                        Text("filter", modifier = Modifier
+                            .padding(start = 8.dp, end = 4.dp)
+                            .alpha(0.8f),
+                            fontFamily = bison,
+                            letterSpacing = 1.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth(0.95f)
+                            .padding(0.dp)
+                            .alpha(0.0f)
+                    )
+
+                    LazyHorizontalGrid(rows = GridCells.Fixed(1),
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .weight(0.6f)
+                            .fillMaxWidth(), horizontalArrangement = Arrangement.Start)
+                    {
+                        items(filterOptions.size)
+                        {
+                                item ->  FilterComposable(item, onClick = { if(filterBy==it){filterBy="none"}else{filterBy=it} }, filterBy)
+                        }
+                    }
                 }
+            }
+        }
+
+        //  Holds the zone information composable
+        Row(modifier = Modifier
+            .weight(0.2f)
+            .fillMaxWidth()
+            .padding(top = 4.dp)
+            //.background(Color.Gray)
+            .clip(RoundedCornerShape(16.dp)),
+            horizontalArrangement = Arrangement.SpaceAround)
+        {
+            //  Major zone
+            Column(modifier = Modifier,
+                horizontalAlignment = Alignment.CenterHorizontally)
+            {
+                ZoneInfoComposable(type = "major", postsCount, usersCount)
             }
         }
 
@@ -203,6 +237,7 @@ fun HomeScreen()
                     {
                         if(currentView == "discover")
                         {
+                            //  Shows the people in the zone
                             items(items = listA.discoveredDetails, key = { item -> item.uid})
                             { item ->
                                 discoverMainComposable(item)
@@ -224,7 +259,7 @@ fun HomeScreen()
                             items(items = posts, key = { item -> item.userID})
                             {
                                     item ->
-                                Column(modifier = Modifier.animateItemPlacement(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)))
+                                Column(/*modifier = Modifier.animateItemPlacement(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))*/)
                                 {
                                     boardMessageComposable(item)
                                 }
@@ -326,7 +361,7 @@ fun boardMessageComposable(post: PostClass)
 
     ElevatedCard(modifier = Modifier
         .padding(top = 8.dp)
-        .scale(rowValue.value)
+        .scale(1f)//rowValue.value
         .clip(
             RoundedCornerShape(
                 bottomStart = 8.dp,
@@ -432,7 +467,7 @@ fun boardMessageComposable(post: PostClass)
 
             Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
-                    .fillMaxWidth(1f)
+                    .fillMaxWidth(0.9f)
                     .padding(top = 0.dp)
                     .alpha(
                         if (isReplying) {
@@ -785,6 +820,105 @@ fun boardReplyComposable(value: String, onChange: (String)->Unit, post: PostClas
             }
         }
     }
+}
+
+//  Displays current zone information
+@Composable
+fun ZoneInfoComposable(type: String, postsCount: Int, usersCount: Int)
+{
+    var zoneType = if(type == "major"){Color.Red}else{Color.Blue}
+    Surface(color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+    shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp)
+    )
+    {
+        Column(//modifier = Modifier.background(zoneType),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(4.dp))
+        {
+            Row(horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.weight(0.7f))
+            {
+                //  Displays the name
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(0.25f))
+                {
+                    Row(horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .weight(0.7f)
+                            .fillMaxWidth(0.3f))
+                    {
+                        Icon(painter = painterResource(id = R.drawable.notes_svgrepo_com), contentDescription = "user count icon",
+                            modifier = Modifier
+                                .clipToBounds()
+                                .padding(2.dp))
+                        Text(postsCount.toString(), fontSize = 24.sp, fontFamily = bison, fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.sp)
+                    }
+
+                    Row(horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.Top,
+                        modifier = Modifier.weight(0.3f))
+                    {
+                        Text("posts", fontSize = 12.sp, fontFamily = bison, fontWeight = FontWeight.Thin,
+                            letterSpacing = 1.sp)
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(0.25f))
+                {
+                    Row(horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .weight(0.7f)
+                            .fillMaxWidth(0.3f))
+                    {
+                        Icon(painter = painterResource(id = R.drawable.profile_circle_svgrepo_com), contentDescription = "user count icon",
+                            modifier = Modifier
+                                .clipToBounds()
+                                .padding(2.dp))
+                        Text(usersCount.toString(), fontSize = 24.sp, fontFamily = bison, fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.sp)
+                    }
+
+                    Row(horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.Top,
+                        modifier = Modifier.weight(0.3f))
+                    {
+                        Text("users", fontSize = 12.sp, fontFamily = bison, fontWeight = FontWeight.Thin,
+                            letterSpacing = 1.sp)
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .weight(0.3f)
+                    .background(Color.Transparent)
+                    .fillMaxWidth())
+            {
+                Icon(painter = painterResource(id = R.drawable.map_point_svgrepo_com), contentDescription = "user count icon",
+                    modifier = Modifier
+                        .clipToBounds()
+                        .padding(4.dp))
+                Text("LEFKE", fontSize = 16.sp, fontFamily = bison, fontWeight = FontWeight.Normal,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(end = 12.dp))
+            }
+
+        }
+
+    }
+
 }
 
 //  Filters
@@ -1169,8 +1303,8 @@ fun navigationComposable()
 {
     //Divider(thickness = Dp.Hairline, color = Color.White, modifier = Modifier.padding(start=12.dp, end = 12.dp))
     ElevatedCard(modifier = Modifier
-        .padding(0.dp),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        .padding(4.dp),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
         //color = MaterialTheme.colorScheme.background
     )
     {
@@ -1228,7 +1362,7 @@ fun navigationComposable()
                     },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 4.dp)
                             .requiredWidth(30.dp))
                 }
 
@@ -1286,7 +1420,7 @@ fun navigationComposable()
                     },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 4.dp)
                             .requiredWidth(30.dp))
                 }
             }
@@ -1302,7 +1436,6 @@ fun navigationComposable()
                             Color.Transparent
                         }, shape = RoundedCornerShape(50),
                         modifier = Modifier
-                            //.fillMaxHeight(1f)
                             .align(Alignment.Center)
                             .aspectRatio(1f)
                             .fillMaxWidth(1f)
@@ -1339,7 +1472,7 @@ fun navigationComposable()
                     },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 4.dp)
                             .requiredWidth(30.dp))
                 }
             }
@@ -1394,7 +1527,7 @@ fun navigationComposable()
                     },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 4.dp)
                             .requiredWidth(30.dp))
                 }
             }
@@ -1406,11 +1539,10 @@ fun navigationComposable()
 @Composable
 fun topBarComposable()
 {
-    ElevatedCard(modifier = Modifier
-        .padding(start = 0.dp, end = 0.dp)
-        .shadow(0.dp),
+    Surface(modifier = Modifier
+        .padding(start = 0.dp, end = 0.dp),
         shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
-        //color = MaterialTheme.colorScheme.background
+        color = Color.Transparent
     )
     {
         Row(
@@ -1426,12 +1558,12 @@ fun topBarComposable()
                     .fillMaxSize()
             )
             {
-                Image(
+                Icon(
                     painter = painterResource(id = R.drawable.cirqle_logo_3),
                     contentDescription = "app icon", modifier = Modifier.padding(top = 18.dp, bottom = 18.dp, start = 20.dp),
                 )
                 Text(stringResource(id = R.string.app_name), fontFamily = bison, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
-                fontSize = 24.sp, modifier = Modifier.padding(start=10.dp))
+                fontSize = 28.sp, modifier = Modifier.padding(start=10.dp))
             }
 
             //  about page icon
