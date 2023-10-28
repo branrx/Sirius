@@ -1,6 +1,8 @@
 package com.fishinspace.projectcosmichamster.ui
 
+import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.fishinspace.projectcosmichamster.activityContext
@@ -28,5 +30,40 @@ fun checkPermission(permission: String): Boolean
         Log.d("permission", "false")
         return false
     }
+    return true
+}
+
+fun initPermissions(): Boolean
+{
+    var permission = ""
+    for(index in 0..3)
+    {
+        when(index)
+        {
+            0 -> { permission = Manifest.permission.ACCESS_FINE_LOCATION }
+            1 -> { permission =
+                if(Build.VERSION.SDK_INT>=33)
+                {
+                    Manifest.permission.READ_MEDIA_IMAGES
+                }   else{
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                }    // checks sdk version and assigns appropriate permission request
+            }
+            2 -> { permission = Manifest.permission.POST_NOTIFICATIONS }
+            3 -> {if(Build.VERSION.SDK_INT>=33) { permission = Manifest.permission.ACCESS_BACKGROUND_LOCATION } }
+        }
+
+        //  check if permission is allowed
+        if(checkPermission(permission))
+        {
+            Log.d("$permission", "allowed")
+        }else{
+            //  if a single permission is not allowed return false
+            Log.d("$permission", "not-allowed")
+            return false
+        }
+    }
+
+    //  if all permissions are allowed return true
     return true
 }

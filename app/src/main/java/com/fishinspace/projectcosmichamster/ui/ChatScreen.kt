@@ -181,7 +181,7 @@ fun ChatScreen()
         }
 
         //  message, input field, send
-        ElevatedCard(modifier = Modifier
+        Surface(modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 0.dp, top = 0.dp),
         )
@@ -207,7 +207,7 @@ fun chatBarComposable()
     var userID = appViewModel.friendsDetailList.collectAsState().value.friendsDetails[appViewModel.activeChatNumber]
     var userObj = appViewModel.friendsDetailList.collectAsState().value.friendsDetails[appViewModel.activeChatNumber]
 
-    ElevatedCard(
+    Surface(
         modifier = Modifier
             .padding(start = 0.dp, end = 0.dp)
             .shadow(0.dp),

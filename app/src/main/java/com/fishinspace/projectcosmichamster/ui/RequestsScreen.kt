@@ -21,8 +21,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -35,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,23 +47,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.fishinspace.projectcosmichamster.R
 import com.fishinspace.projectcosmichamster.appViewModel
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
 
 @Composable
 fun RequestsScreen()
 {
+    //  Holds all requests received from server
+    //  if new request is received, UI recomposes
     val listA by appViewModel.requestsInDetailList.collectAsState()
-    val requestsInCount by remember { mutableStateOf(appViewModel.requestsInCount) }
     Log.d("sampled -- Request", listA.requestsInDetails.size.toString())
 
     Column(modifier = Modifier.fillMaxSize())
     {
-        //  top bar
+        //  Top bar, holds icon and other buttons
         Row(modifier = Modifier
             .requiredHeight(60.dp)
             .fillMaxWidth())
@@ -91,6 +85,7 @@ fun RequestsScreen()
             }
         }
 
+        //  Main card wrapper
         Card(modifier = Modifier
             .weight(0.9f)
             .padding(8.dp)
@@ -99,34 +94,36 @@ fun RequestsScreen()
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         )
         {
-            //  user profile
             Column(modifier = Modifier
                 .fillMaxSize()
                 .weight(1f)
                 .padding(0.dp),
-                //.shadow(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             )
             {
-                var requestsAvailable = listA.requestsInCount>0
+                //  Get requests count, if available display them
+                val requestsAvailable = listA.requestsInCount>0
                 AnimatedVisibility(requestsAvailable)
                 {
                     LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxSize())
                     {
                         items(items = listA.requestsInDetails, key = { item -> item.uid})
                         { item ->
-                            requestMainComposable(item)
+                            RequestMainComposable(item)
                         }
                     }
                 }
+
+                //  If no requests available display "no requests"
                 AnimatedVisibility(!requestsAvailable)
                 {
-                    noRequestsComposable()
+                    NoRequestsComposable()
                 }
             }
         }
 
+        //  Displays banner ad
         /*Column(modifier = Modifier.fillMaxWidth()
             .weight(0.1f),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom
@@ -142,7 +139,7 @@ fun RequestsScreen()
             )
         }*/
 
-        //  navigation bar
+        //  Navigation bar
         Row(modifier = Modifier
             .requiredHeight(60.dp)
             .fillMaxWidth())
@@ -152,20 +149,24 @@ fun RequestsScreen()
     }
 }
 
+//  Composable object for singular request
+//  Displays, profile picture, and information of requester
+//  Along with action buttons to accept or decline request
 @Composable
-fun requestMainComposable(item: RequesterClass)
+fun RequestMainComposable(item: RequesterClass)
 {
+    //  Enables the objects to animate in and out
     val rowValue = remember{ androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(Unit)
     {
         rowValue.animateTo(1f, animationSpec = tween(1000, easing = FastOutLinearInEasing))
     }
+
     Card(modifier = Modifier
         .requiredHeight(150.dp)
         .padding(top = 8.dp)
-        .alpha(rowValue.value)
-        //.border(Dp.Hairline, color = brown, shape = RoundedCornerShape(8.dp)),
-        ,colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        .alpha(rowValue.value),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     )
     {
         Column(modifier = Modifier, verticalArrangement = Arrangement.Center)
@@ -176,23 +177,27 @@ fun requestMainComposable(item: RequesterClass)
                 .weight(0.6f),
                 verticalAlignment = Alignment.CenterVertically)
             {
-                var requesterUID = item.uid
-                //  profile picture
+                val requesterUID = item.uid
+                //  Displays profile picture
                 Column(modifier = Modifier
                     .weight(0.3f)
                     .fillMaxWidth()
                     .padding(top = 0.dp))
                 {
-                    requesterPicComposable(requesterUID)
+                    RequesterPicComposable(requesterUID)
                 }
+
+                //  Displays information like name, age, school, gender
                 Column(modifier = Modifier
                     .weight(0.8f)
                     .fillMaxWidth()
                     .padding(top = 0.dp))
                 {
-                    requesterDetailsComposable(item)
+                    RequesterDetailsComposable(item)
                 }
             }
+
+            //  Displays action buttons accept or decline
             Row(modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
@@ -200,16 +205,17 @@ fun requestMainComposable(item: RequesterClass)
                 .weight(0.4f),
                 verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.End)
             {
-                respondComposable(item)
+                RespondComposable(item)
             }
         }
     }
 }
 
+//  Displays profile picture
 @Composable
-fun requesterPicComposable(requesterUID: String)
+fun RequesterPicComposable(requesterUID: String)
 {
-    var color = MaterialTheme.colorScheme.inversePrimary
+    val color = MaterialTheme.colorScheme.inversePrimary
     Column(modifier = Modifier
         .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally)
     {
@@ -229,10 +235,9 @@ fun requesterPicComposable(requesterUID: String)
     }
 }
 
-
-
+//  Displayed if no requests available
 @Composable
-fun noRequestsComposable()
+fun NoRequestsComposable()
 {
     Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -243,48 +248,9 @@ fun noRequestsComposable()
     }
 }
 
+//  Displays user information
 @Composable
-fun acceptRejectComposable()
-{
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(4.dp), horizontalArrangement = Arrangement.Center)
-    {
-        //  reject button
-        Button(onClick = { /*appViewModel.declineRequest()*/ },
-            modifier = Modifier
-                .fillMaxWidth(0.3f)
-                .padding(end = 2.dp),
-            colors = ButtonDefaults.outlinedButtonColors(Color(0xcfff6969)),shape = RoundedCornerShape(30)
-        )
-        {
-            Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically)
-            {
-                Text(text = "DECLINE",color = Color.White)
-                //Image(painter = painterResource(id = R.drawable.thumbs_down_skin_2_svgrepo_com),
-                //    contentDescription = "thumbs down")
-            }
-        }
-
-        Button(onClick = { /*appViewModel.acceptRequest()*/ },
-            modifier = Modifier
-                .fillMaxWidth(0.415f)
-                .padding(start = 2.dp),
-        colors = ButtonDefaults.outlinedButtonColors(Color(0xcf98eecc)),shape = RoundedCornerShape(30)
-        )
-        {
-            Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically)
-            {
-                //Image(painter = painterResource(id = R.drawable.thumbs_up_skin_2_svgrepo_com),
-                //    contentDescription = "thumbs down")
-                Text(text = "ACCEPT",color = Color.White)
-            }
-        }
-    }
-}
-
-@Composable
-fun requesterDetailsComposable(requesterMap: RequesterClass)
+fun RequesterDetailsComposable(requesterMap: RequesterClass)
 {
     Column(modifier = Modifier.padding(top = 0.dp, bottom = 0.dp))
     {
@@ -346,20 +312,11 @@ fun requesterDetailsComposable(requesterMap: RequesterClass)
         )
         {
             Row(modifier= Modifier
-                //.background(Color(0XFFdfbac9))
                 .weight(0.07f)
                 .fillMaxWidth()
                 .padding(start = 0.dp),
                 verticalAlignment = Alignment.CenterVertically)
             {
-                /*Row(modifier= Modifier
-                    .weight(0.1f)
-                    .fillMaxWidth())
-                {
-                    Icon(painter = painterResource(id = R.drawable.graduation_cap_solid_svgrepo_com),
-                        contentDescription = "major icon",
-                        modifier= Modifier.scale(0.35f))
-                }*/
                 Row(modifier= Modifier
                     .weight(0.7f)
                     .fillMaxWidth(),
@@ -383,8 +340,9 @@ fun requesterDetailsComposable(requesterMap: RequesterClass)
     }
 }
 
+//  Displays action buttons accept and decline
 @Composable
-fun respondComposable(requesterMap: RequesterClass)
+fun RespondComposable(requesterMap: RequesterClass)
 {
     Surface(modifier= Modifier
         .padding(top = 0.dp, start = 0.dp, end = 12.dp, bottom = 0.dp)
@@ -397,15 +355,13 @@ fun respondComposable(requesterMap: RequesterClass)
             .fillMaxSize()
             .padding(0.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically)
         {
-            //  reject button
+            //  Decline button
             ElevatedButton(onClick = { appViewModel.declineRequest(requesterMap.uid) },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .fillMaxHeight(0.8f)
                     .weight(0.5f)
                     .padding(end = 2.dp),
-                //shape = RoundedCornerShape(topEnd = 8.dp, topStart = 8.dp, bottomStart = 8.dp, bottomEnd = 0.dp)
-                //colors = ButtonDefaults.outlinedButtonColors(Color(0xcfff6969)),shape = RoundedCornerShape(30)
             )
             {
                 Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically)
@@ -413,19 +369,16 @@ fun respondComposable(requesterMap: RequesterClass)
                     Icon(painter = painterResource(id = R.drawable.decline_cross),
                         contentDescription = "decline icon",
                         modifier= Modifier)
-                    //Image(painter = painterResource(id = R.drawable.thumbs_down_skin_2_svgrepo_com),
-                    //    contentDescription = "thumbs down")
                 }
             }
 
+            //  Accept button
             ElevatedButton(onClick = { appViewModel.acceptRequest(requesterMap.uid, requesterMap.key) },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .fillMaxHeight(0.8f)
                     .weight(0.5f)
                     .padding(start = 2.dp),
-                //shape = RoundedCornerShape(topEnd = 8.dp, topStart = 8.dp, bottomStart = 0.dp, bottomEnd = 8.dp)
-                //colors = ButtonDefaults.outlinedButtonColors(Color(0xaf98eecc)),shape = RoundedCornerShape(30)
             )
             {
                 Row(modifier = Modifier, verticalAlignment = Alignment.CenterVertically)

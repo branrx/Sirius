@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +54,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.fishinspace.projectcosmichamster.Destination
 import com.fishinspace.projectcosmichamster.R
 import com.fishinspace.projectcosmichamster.activityContext
@@ -71,8 +68,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun SignInScreen()
 {
-    navController.enableOnBackPressed(false)
-
     //  Helps show loading animation when logging in
     var isLoading by remember { mutableStateOf(appViewModel.isLoading) }
 
@@ -320,6 +315,7 @@ fun PasswordComposable(value: String, onChange: (String)->Unit, onFocus: (FocusS
     }
 }
 
+//  Checks if credentials are empty
 fun validateCreds(email: String, password: String): Boolean
 {
     return email.isNotEmpty() && password.isNotEmpty()

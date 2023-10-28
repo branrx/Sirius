@@ -12,14 +12,12 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,7 +28,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
@@ -58,7 +55,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.Destination
@@ -85,7 +81,7 @@ fun FillProfileScreen()
     }
     val galleryPicker = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent())
     {
-            uri: Uri? -> imageUri = uri;appViewModel.imgUri=uri;appViewModel.previewProfilePicture();
+            uri: Uri? -> imageUri = uri;appViewModel.imgUri=uri;appViewModel.previewProfilePicture()
     }
 
     Column(modifier = Modifier
@@ -135,16 +131,7 @@ fun FillProfileScreen()
                 FieldComposable(value = value, onChange = { value = it})
             }
 
-            /*AnimatedVisibility(fillFieldNames[fieldIndex]!="picture" &&
-                    (fillFieldNames[fieldIndex]!="school" && fillFieldNames[fieldIndex]!="year"
-                            && fillFieldNames[fieldIndex]!="gender"))
-            {
-                Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .padding(top = 4.dp))
-            }*/
-
+            //  Displays dropdown menu, for school, year, gender
             AnimatedVisibility(visible = fillFieldNames[fieldIndex]=="school" || fillFieldNames[fieldIndex] == "year"
                     || fillFieldNames[fieldIndex] == "gender")
             {
@@ -152,6 +139,7 @@ fun FillProfileScreen()
                     fieldName = fillFieldNames[fieldIndex])
             }
 
+            //  Displays profile selector, for profile picture
             AnimatedVisibility(fillFieldNames[fieldIndex]=="picture")
             {
                 //  profile picture composable
@@ -174,6 +162,7 @@ fun FillProfileScreen()
             }
         }
 
+        //  Holds navigation buttons, back and proceed
         Row(modifier = Modifier
             .fillMaxWidth(0.7f)
             .weight(0.2f), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center)
@@ -218,7 +207,7 @@ fun FillProfileScreen()
                     if(imageUri!=null)
                     {
                         //  Upload user information
-                        FillProfileUpload()
+                        fillProfileUpload()
                         navController.navigate(Destination.ExploreScreen.route)
                     }else{
                         Toast.makeText(activityContext ,"No profile picture selected.", Toast.LENGTH_SHORT).show()
@@ -243,7 +232,7 @@ fun FillProfileScreen()
 fun DropSelectMenu(onSelect: (String)->Unit, dropDownVar: String, fieldName: String)
 {
     var isVisible by remember { mutableStateOf(false) }
-    var options = when(fieldName)
+    val options = when(fieldName)
     {
         "school" -> schools
         "year" -> years
@@ -344,7 +333,8 @@ fun DropSelectMenu(onSelect: (String)->Unit, dropDownVar: String, fieldName: Str
     }
 }
 
-fun FillProfileUpload()
+//  Upload information when done
+fun fillProfileUpload()
 {
     appViewModel.saveEdits()
     appViewModel.uploadProfile()
@@ -381,14 +371,15 @@ fun FieldComposable(value: String, onChange: (String)->Unit)
     }
 }
 
+//  Grabs images from storage, enabling user to pick an image from gallery
 @Composable
 fun FillProfilePicComposable(galleryPicker: ManagedActivityResultLauncher<String, Uri?>, onClick: ()->Unit)
 {
-    var isUploading by remember { mutableStateOf(appViewModel.isUploading)}
+    val isUploading by remember { mutableStateOf(appViewModel.isUploading)}
 
-    var transition = rememberInfiniteTransition()
+    val transition = rememberInfiniteTransition()
 
-    var rotationAnimation = transition.animateFloat(
+    val rotationAnimation = transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing))

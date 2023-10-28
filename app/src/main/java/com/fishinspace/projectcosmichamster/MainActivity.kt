@@ -45,6 +45,7 @@ import com.fishinspace.projectcosmichamster.ui.ProfileScreen
 import com.fishinspace.projectcosmichamster.ui.RequestsScreen
 import com.fishinspace.projectcosmichamster.ui.SignInScreen
 import com.fishinspace.projectcosmichamster.ui.SignUpScreen
+import com.fishinspace.projectcosmichamster.ui.initPermissions
 import com.fishinspace.projectcosmichamster.ui.serviceIntent
 import com.fishinspace.projectcosmichamster.ui.theme.ProjectCosmicHamsterTheme
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -132,10 +133,16 @@ class MainActivity : ComponentActivity() {
                     createNotificationChannel("1", "new discovery")
                     createNotificationChannel("2", "new message")
 
+                    //  check permissions
+                    var permissions = initPermissions()
+
+                    //  if permissions are allowed go to sign in else permissions screen
+                    var rootScreen = if(permissions){"signin_screen"}else{"permissions_screen"}
+
                     //  Initiate nagivation framework
                     navController = rememberNavController()
                     navController.enableOnBackPressed(true)
-                    NavigationAppHost(navController)
+                    NavigationAppHost(navController, rootScreen)
 
                 }
             }
@@ -166,9 +173,9 @@ sealed class Destination(val route: String)
 //  screens in the app
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NavigationAppHost(navController: NavHostController)
+fun NavigationAppHost(navController: NavHostController, rootScreen: String)
 {
-    NavHost(navController = navController, startDestination = "explore_screen", enterTransition = {
+    NavHost(navController = navController, startDestination = rootScreen, enterTransition = {
       fadeIn(animationSpec = tween(250, 0, easing = LinearEasing))
     }, exitTransition = {
         fadeOut(animationSpec = tween(250, 0, easing = LinearEasing))
