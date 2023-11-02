@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationRequest
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
@@ -51,6 +52,8 @@ import com.fishinspace.projectcosmichamster.ui.theme.ProjectCosmicHamsterTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -124,7 +127,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
                     }
-
+                    fusedLocationProviderClient.getCurrentLocation(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
+                    //fusedLocationProviderClient.lastLocation
                     //  Create foreground service intent
                     //  Handles: messages, discoveries while app is in background
                     serviceIntent = Intent(this, ChatBackgroundService::class.java)
@@ -140,6 +144,7 @@ class MainActivity : ComponentActivity() {
                     var rootScreen = if(permissions){"signin_screen"}else{"permissions_screen"}
 
                     //  Initiate nagivation framework
+                    //rootScreen = "post_screen"
                     navController = rememberNavController()
                     navController.enableOnBackPressed(true)
                     NavigationAppHost(navController, rootScreen)

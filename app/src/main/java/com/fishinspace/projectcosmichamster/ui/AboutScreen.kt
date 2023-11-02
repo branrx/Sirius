@@ -24,6 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.R
 import com.fishinspace.projectcosmichamster.ui.theme.ProjectCosmicHamsterTheme
 
+
+//  Displays the app name and version along
+//  with the developer information
 @Composable
 fun AboutScreen()
 {

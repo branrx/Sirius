@@ -1560,7 +1560,7 @@ fun topBarComposable()
             {
                 Icon(
                     painter = painterResource(id = R.drawable.cirqle_logo_3),
-                    contentDescription = "app icon", modifier = Modifier.padding(top = 18.dp, bottom = 18.dp, start = 20.dp),
+                    contentDescription = "app icon", modifier = Modifier.padding(top = 18.dp, bottom = 18.dp, start = 12.dp),
                 )
                 Text(stringResource(id = R.string.app_name), fontFamily = bison, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
                 fontSize = 28.sp, modifier = Modifier.padding(start=10.dp))

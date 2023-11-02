@@ -3,13 +3,16 @@ package com.fishinspace.projectcosmichamster.ui
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
@@ -38,13 +41,16 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.Destination
+import com.fishinspace.projectcosmichamster.MainActivity
 import com.fishinspace.projectcosmichamster.R
 import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.appViewModel
@@ -73,11 +79,27 @@ fun CreatePostScreen()
     var selectedCat by remember { mutableStateOf(0) }
     var selectedSpe by remember { mutableStateOf(0) }
 
+    val screenheight = LocalConfiguration.current.screenHeightDp
+
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     )
     {
-        Spacer(modifier = Modifier.weight(0.05f))
+        //  category options composable
+        Row(modifier = Modifier
+            .height((0.08f * screenheight).dp)
+            .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically)
+        {
+            Icon(painter = painterResource(id = R.drawable.arrow_left_svgrepo_com), contentDescription = "home",
+                modifier = Modifier.padding(top = 18.dp, bottom = 18.dp, start = 8.dp)
+                    .clipToBounds().rotate(0f))
+            Text(text = "Post to Board", fontFamily = bison, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
+                fontSize = 28.sp, modifier = Modifier.padding(start=10.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height((0.05f * screenheight).dp))
 
         //Text(text = "Post To Board", fontFamily = bison,
         //    fontWeight = FontWeight.SemiBold, fontSize = 36.sp, letterSpacing = 1.sp)
@@ -85,7 +107,7 @@ fun CreatePostScreen()
 
         //  category options composable
         Column(modifier = Modifier
-            .requiredHeight(80.dp)
+            .height((0.1f * screenheight).dp)
             .fillMaxWidth())
         {
             Row(modifier = Modifier.weight(0.4f).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
@@ -109,11 +131,9 @@ fun CreatePostScreen()
             }
         }
 
-        Spacer(modifier = Modifier.weight(0.02f))
-
         //  category specific composable
         Column(modifier = Modifier
-            .requiredHeight(72.dp)
+            .height((0.1f * screenheight).dp)
             .fillMaxWidth())
         {
             Text(text = "Looking for?", fontFamily = bison,
@@ -130,15 +150,29 @@ fun CreatePostScreen()
             }
         }
 
-        Text(text = "Add a note", fontFamily = bison,
-            fontWeight = FontWeight.SemiBold, fontSize = 22.sp, letterSpacing = 1.sp,
-            modifier = Modifier.padding(top = 20.dp)
-        )
+        Spacer(modifier = Modifier.weight(0.08f))
+
+
+        Row(modifier = Modifier
+            .padding(4.dp)
+            .height((0.1f * screenheight).dp)
+            .fillMaxWidth(0.8f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.Bottom)
+        {
+            Text(text = "Add a note", fontFamily = bison,
+                fontWeight = FontWeight.SemiBold, fontSize = 22.sp, letterSpacing = 1.sp,
+                modifier = Modifier.padding(top = 20.dp)
+            )
+        }
 
         //  assists
         Row(modifier = Modifier
             .padding(4.dp)
-            .fillMaxWidth(0.8f))
+            .height((0.1f * screenheight).dp)
+            .fillMaxWidth(0.8f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically)
         {
             Text(text = "e.g Preferrably someone who can cook, cause you can't study on an empty stomach.", fontFamily = ebrima,
                 fontWeight = FontWeight.Normal, fontSize = 16.sp, letterSpacing = 0.sp,
@@ -149,14 +183,20 @@ fun CreatePostScreen()
         //  input
         Row(modifier = Modifier
             .padding(top = 16.dp)
-            .fillMaxWidth(0.9f))
+            .height((0.1f * screenheight).dp)
+            .fillMaxWidth(0.9f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically)
         {
             postInputComposable(postDescription, onChange = { postDescription = it})
         }
 
         Row(modifier = Modifier
             .padding(4.dp)
-            .fillMaxWidth(0.6f))
+            .height((0.1f * screenheight).dp)
+            .fillMaxWidth(0.6f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically)
         {
             Text(text = "Posts last for 24 hours, everyone inside your major zone can see and reply to them (friend or not).", fontFamily = bison,
                 fontWeight = FontWeight.Normal, fontSize = 16.sp, letterSpacing = 1.sp,
@@ -167,7 +207,9 @@ fun CreatePostScreen()
         Spacer(modifier = Modifier.weight(0.08f))
 
         //  BUTTONS
-        Row(modifier = Modifier.fillMaxWidth(0.8f))
+        Row(modifier = Modifier.fillMaxWidth(0.8f)
+            .height((0.17f * screenheight).dp),
+            verticalAlignment = Alignment.Bottom)
         {
             ElevatedButton(onClick = {
                 navController.navigate(Destination.ExploreScreen.route)
@@ -316,5 +358,15 @@ fun postInputComposable(value: String, onChange: (String)->Unit)
             }
         }
     }
+}
+
+@Preview(
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+fun CreatePostPreview()
+{
+    CreatePostScreen()
 }
 
