@@ -5,9 +5,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import android.content.Context
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -39,7 +42,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.appViewModel
 
 @Composable
@@ -47,6 +49,7 @@ fun PasswordResetScreen()
 {
     //  Field value: e.g field: age ,field value = 24
     var value by remember { mutableStateOf("") }
+    var context = LocalContext.current
 
     //  Field index: translates to username, name, surname, age fields etc..
     var fieldIndex by remember { mutableIntStateOf(0) }
@@ -129,10 +132,10 @@ fun PasswordResetScreen()
                 //  Move to next field only if value is not empty
                 if(value.isNotEmpty())
                 {
-                    appViewModel.resetPassword(value)
+                    appViewModel.resetPassword(value, context = context)
                     emailSent = true
                 }else{
-                    Toast.makeText(activityContext ,"No email entered.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,"No email entered.", Toast.LENGTH_SHORT).show()
                 }
             }, modifier = Modifier
                 .fillMaxWidth(0.7f)
@@ -153,6 +156,7 @@ fun PasswordResetScreen()
 @Composable
 fun ResetEmailInputComposable(value: String, onChange: (String)->Unit)
 {
+    val context = LocalContext.current
     val onSurface = MaterialTheme.colorScheme.onSurface
     Surface(color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier
@@ -183,20 +187,20 @@ fun ResetEmailInputComposable(value: String, onChange: (String)->Unit)
                     cursorBrush = Brush.sweepGradient(listOf(onSurface, onSurface)),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {resetPassword(value)})
+                    keyboardActions = KeyboardActions(onDone = {resetPassword(value, context = context)})
                 )
             }
         }
     }
 }
 
-fun resetPassword(email: String)
+fun resetPassword(email: String, context: Context)
 {
     if(email.isNotEmpty())
     {
-        appViewModel.resetPassword(email)
+        appViewModel.resetPassword(email, context = context)
     }else{
-        Toast.makeText(activityContext ,"No email entered.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,"No email entered.", Toast.LENGTH_SHORT).show()
     }
 }
 

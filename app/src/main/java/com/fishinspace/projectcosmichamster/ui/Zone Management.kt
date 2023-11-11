@@ -1,6 +1,7 @@
 package com.fishinspace.projectcosmichamster.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,10 +10,13 @@ import androidx.core.app.ActivityCompat
 import com.fishinspace.projectcosmichamster.GeofenceBroadcastReceiver
 import com.fishinspace.projectcosmichamster.activityThis
 import com.fishinspace.projectcosmichamster.appViewModel
-import com.fishinspace.projectcosmichamster.geofencingClient
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 
 fun addToZone(zoneID: String)
 {
@@ -127,13 +131,12 @@ fun setupFences(/*fencesList: MutableList<Map<String, Double>>*/)
     ))
 
     Log.d("fence count", tempGeofences.size.toString())
-    buildFences(tempGeofences)
+    //buildFences(tempGeofences)
 }
 
+@SuppressLint("VisibleForTests")
 fun getGeofence(fenceID: String, lat: Double, lng: Double, radius: Float): Geofence
 {
-    geofencingClient = LocationServices.getGeofencingClient(activityThis)
-
     val geofence = Geofence.Builder()
         .setRequestId(fenceID)
         .setCircularRegion(
@@ -148,19 +151,19 @@ fun getGeofence(fenceID: String, lat: Double, lng: Double, radius: Float): Geofe
     return geofence
 }
 
-fun buildFences(geofences: MutableList<Geofence>)
+//  prepare intent
+val geofencePendingIntent: PendingIntent by lazy {
+    val intent = Intent(activityThis, GeofenceBroadcastReceiver::class.java)
+    PendingIntent.getBroadcast(activityThis, 0, intent, PendingIntent.FLAG_MUTABLE)
+}
+
+fun buildFences(geofenceObj: Geofence)
 {
     //  build fences
     val geofenceRequest = GeofencingRequest.Builder().apply {
         setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-        addGeofences(geofences)
+        addGeofence(geofenceObj)
     }.build()
-
-    //  prepare intent
-    val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(activityThis, GeofenceBroadcastReceiver::class.java)
-        PendingIntent.getBroadcast(activityThis, 0, intent, PendingIntent.FLAG_MUTABLE)
-    }
 
     initGeofences(geofenceRequest, geofencePendingIntent)
 }
@@ -180,7 +183,7 @@ fun initGeofences(geofenceRequest: GeofencingRequest, geofencePendingIntent: Pen
         // to handle the case where the user grants the permission. See the documentation
         // for ActivityCompat#requestPermissions for more details.
 
-        geofencingClient.addGeofences(geofenceRequest, geofencePendingIntent)?.run {
+        appViewModel.geofencingClient.addGeofences(geofenceRequest, geofencePendingIntent)?.run {
             addOnSuccessListener {
                 Log.d("add fence", "successfully added fence")
                 // ...
@@ -194,15 +197,71 @@ fun initGeofences(geofenceRequest: GeofencingRequest, geofencePendingIntent: Pen
     }
 }
 
-fun removeGeofence()
+fun removeGeofence(geofenceList: List<String>)
 {
-    var tempList = listOf("0", "1", "mj*1")
-    geofencingClient.removeGeofences(tempList).run {
+    //geofencingClient.
+    //var tempList = listOf("mn*0*0", "mj*0")
+    appViewModel.geofencingClient.removeGeofences(geofenceList).run {
         addOnSuccessListener {
-            Log.d("successfully removed fence", "id---")
+            Log.d("successfully removed fence", this.isComplete.toString())
         }
         addOnFailureListener {
             Log.d("failed to remove fence", it.message.toString())
         }
     }
 }
+
+fun uploadMinorZone(zone: MinorZoneClass)
+{
+    val zoneid = "mn*${zone.majorID}*${zone.id}"
+    val ref = appViewModel.dbObject.reference.child("available zones").child("minor")
+    val zoneObj = mapOf("id" to zone.id, "type" to zone.type, "lat" to zone.lat, "lng" to zone.lng,
+        "location" to zone.location, "majorID" to zone.majorID, "radius" to zone.radius)
+
+    Log.d("uploadMinorZone transaction", "in function")
+
+    ref.runTransaction(object: Transaction.Handler{
+        override fun doTransaction(currentData: MutableData): Transaction.Result {
+            currentData.child(zoneid).value = zoneObj
+
+            return Transaction.success(currentData)
+        }
+
+        override fun onComplete(
+            error: DatabaseError?,
+            committed: Boolean,
+            currentData: DataSnapshot?
+        ) {
+            Log.d("uploadMinorZone transaction", committed.toString())
+            Log.d("uploadMinorZone transaction", error?.message.toString())
+        }
+    })
+}
+
+fun uploadMajorZone(zone: MajorZoneClass)
+{
+    val zoneid = "mj*${zone.id}"
+    val ref = appViewModel.dbObject.reference.child("available zones").child("major")
+    val zoneObj = mapOf("id" to zone.id, "type" to zone.type, "lat" to zone.lat, "lng" to zone.lng,
+        "location" to zone.location, "radius" to zone.radius)
+
+    Log.d("uploadMajorZone transaction", "in function")
+
+    ref.runTransaction(object: Transaction.Handler{
+        override fun doTransaction(currentData: MutableData): Transaction.Result {
+            currentData.child(zoneid).value = zoneObj
+
+            return Transaction.success(currentData)
+        }
+
+        override fun onComplete(
+            error: DatabaseError?,
+            committed: Boolean,
+            currentData: DataSnapshot?
+        ) {
+            Log.d("uploadMajorZone transaction", committed.toString())
+            Log.d("uploadMajorZone transaction", error?.message.toString())
+        }
+    })
+}
+

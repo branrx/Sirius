@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.database.DatabaseReference
 
 class ChatBackgroundService : Service() {
@@ -16,10 +17,10 @@ class ChatBackgroundService : Service() {
         Log.d("Service", "Service Started!!")
 
         //  create service as foreground
-        createNotificationChannel(id = "0",
+        /*createNotificationChannel(id = "0",
             "foreground service notifier")
         startForeground(1, buildNotification(user = "sirius", "app running in background",
-        id = "0"))
+        id = "0"))*/
         /*val eventListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 // Handle new chat messages here

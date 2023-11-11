@@ -1,10 +1,7 @@
 package com.fishinspace.projectcosmichamster.ui
 
-import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
+import com.fishinspace.projectcosmichamster.appViewModel
 
 //  Holds ui state variables
 data class AppUiState(
@@ -43,9 +40,9 @@ data class AppUiState(
     var editUserBio: String = "",
     var editUserYear: String = "",
     var activeWindow: Int = 1,
-    var discoveredImages: ImageBitmap = getDefaultImage(),
-    var requesterImage: ImageBitmap = getDefaultImage(),
-    var userProfilePicture: ImageBitmap = getDefaultImage(),
+    var discoveredImages: ImageBitmap = defaultImage!!,
+    var requesterImage: ImageBitmap = defaultImage!!,
+    var userProfilePicture: ImageBitmap = defaultImage!!,
     var requestDetailsList :MutableList<RequesterClass> = mutableListOf(),
     var requestImagesMap: MutableMap<String, ImageBitmap> = mutableMapOf(),
     var requestsInCount: Int = 0,
@@ -54,6 +51,7 @@ data class AppUiState(
     var discoveredList: MutableList<UserClass> = mutableListOf(),
     var discoveredImagesList: MutableMap<String, ImageBitmap> = mutableMapOf(),
     var xfriendsCount: Int = 0,
+    var showMainMenu: Boolean = false,
 )
 
 
@@ -164,11 +162,4 @@ enum class MessageType {
 //  Password entry can be reentry or just a normal password
 enum class PasswordType {
     NORMAL, RE_ENTRY
-}
-
-fun getDefaultImage(): ImageBitmap
-{
-    var path = "/sdcard/Pictures/ellie.jpg"
-    var img = BitmapFactory.decodeResource(activityContext.resources, R.drawable.ellie)
-    return img.asImageBitmap()
 }

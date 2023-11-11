@@ -1,5 +1,6 @@
 package com.fishinspace.projectcosmichamster.ui
 
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -50,6 +51,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -59,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.Destination
 import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.appViewModel
 import com.fishinspace.projectcosmichamster.navController
 
@@ -68,6 +69,7 @@ fun FillProfileScreen()
 {
     //  Dropdown variable holder
     var dropDownVar by remember { mutableStateOf("---")}
+    var context = LocalContext.current
 
     //  Field value: e.g field: age ,field value = 24
     var value by remember { mutableStateOf("")}
@@ -81,7 +83,7 @@ fun FillProfileScreen()
     }
     val galleryPicker = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent())
     {
-            uri: Uri? -> imageUri = uri;appViewModel.imgUri=uri;appViewModel.previewProfilePicture()
+            uri: Uri? -> imageUri = uri;appViewModel.imgUri=uri;appViewModel.previewProfilePicture(context)
     }
 
     Column(modifier = Modifier
@@ -102,11 +104,13 @@ fun FillProfileScreen()
                     .weight(0.5f)
                     .padding(24.dp)
                     .clipToBounds(),
+                tint = MaterialTheme.colorScheme.secondary
             )
 
             Text(text = stringResource(id = R.string.app_name), modifier = Modifier
                 .padding(top=12.dp), fontFamily = bison,
-                fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp)
+                fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp,
+                color = MaterialTheme.colorScheme.secondary)
             Text(text = "Setting Up Profile", modifier = Modifier.alpha(0.8f)
                 , fontFamily = bison,
                 fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 24.sp)
@@ -195,7 +199,7 @@ fun FillProfileScreen()
                 {
                     if(value.isEmpty())
                     {
-                        Toast.makeText(activityContext ,"No ${fillFieldNames[fieldIndex]} entered.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context,"No ${fillFieldNames[fieldIndex]} entered.", Toast.LENGTH_SHORT).show()
                     } else{
                         appViewModel.setEdit(fillFieldNames[fieldIndex], value)
                         fieldIndex += 1
@@ -207,10 +211,10 @@ fun FillProfileScreen()
                     if(imageUri!=null)
                     {
                         //  Upload user information
-                        fillProfileUpload()
+                        fillProfileUpload(context = context)
                         navController.navigate(Destination.ExploreScreen.route)
                     }else{
-                        Toast.makeText(activityContext ,"No profile picture selected.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context,"No profile picture selected.", Toast.LENGTH_SHORT).show()
                     }
                 }
 
@@ -334,10 +338,10 @@ fun DropSelectMenu(onSelect: (String)->Unit, dropDownVar: String, fieldName: Str
 }
 
 //  Upload information when done
-fun fillProfileUpload()
+fun fillProfileUpload(context: Context)
 {
     appViewModel.saveEdits()
-    appViewModel.uploadProfile()
+    appViewModel.uploadProfile(context)
 }
 
 @Composable

@@ -1,11 +1,12 @@
 package com.fishinspace.projectcosmichamster.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import com.fishinspace.projectcosmichamster.activityContext
+import com.fishinspace.projectcosmichamster.appViewModel
 
 var pages = mutableMapOf<Int, String>(0 to "Fine Location",
     1 to "Read Media Image",
@@ -20,10 +21,10 @@ var pageDescriptions = mutableMapOf<Int, String>(0 to "This application requires
 
 var rwPermission = ""
 
-fun checkPermission(permission: String): Boolean
+fun checkPermission(permission: String, context: Context): Boolean
 {
     if (ActivityCompat.checkSelfPermission(
-            activityContext,
+            context,
             permission
         ) != PackageManager.PERMISSION_GRANTED
     ) {
@@ -33,7 +34,7 @@ fun checkPermission(permission: String): Boolean
     return true
 }
 
-fun initPermissions(): Boolean
+fun initPermissions(context: Context): Boolean
 {
     var permission = ""
     for(index in 0..3)
@@ -54,7 +55,7 @@ fun initPermissions(): Boolean
         }
 
         //  check if permission is allowed
-        if(checkPermission(permission))
+        if(checkPermission(permission, context = context))
         {
             Log.d("$permission", "allowed")
         }else{

@@ -1,10 +1,13 @@
 package com.fishinspace.projectcosmichamster.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import com.example.compose.md_theme_dark_background
 import com.example.compose.md_theme_dark_error
 import com.example.compose.md_theme_dark_errorContainer
@@ -141,8 +144,10 @@ fun ProjectCosmicHamsterTheme(
     DarkColors
   }
 
+
   MaterialTheme(
     colorScheme = colors,
     content = content
   )
+
 }

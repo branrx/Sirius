@@ -1,5 +1,6 @@
 package com.fishinspace.projectcosmichamster.ui
 
+import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -16,6 +17,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.Destination
 import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
+import com.fishinspace.projectcosmichamster.appViewModel
 import com.fishinspace.projectcosmichamster.navController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,6 +51,7 @@ fun SignUpScreen()
     var email by remember { mutableStateOf("")}
     var password by remember { mutableStateOf("")}
     var password2 by remember { mutableStateOf("")}
+    var context = LocalContext.current
 
     val screenheight = LocalConfiguration.current.screenHeightDp
 
@@ -73,10 +77,12 @@ fun SignUpScreen()
                     .padding(24.dp)
                     .weight(0.5f)
                     .clipToBounds(),
+                tint = MaterialTheme.colorScheme.secondary
             )
             Text(text = stringResource(id = R.string.app_name), modifier = Modifier
                 .padding(top=12.dp), fontFamily = bison,
-                fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp)
+                fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp,
+                color = MaterialTheme.colorScheme.secondary)
             Text(text = "Sign-Up", modifier = Modifier
                 , fontFamily = bison,
                 fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 24.sp)
@@ -109,7 +115,7 @@ fun SignUpScreen()
 
             // Re-enter password
             PasswordComposable(password2, onChange = {password2 = it}, onFocus = {if(it.isFocused) scope.launch { delay(300); relocation.bringIntoView() }},
-                passwordType = PasswordType.RE_ENTRY, onDone = { signUp(password, password2) })
+                passwordType = PasswordType.RE_ENTRY, onDone = { signUp(password, password2, context = context) })
 
             Row(horizontalArrangement = Arrangement.Start, modifier = Modifier
                 .fillMaxWidth(0.7f)
@@ -120,7 +126,7 @@ fun SignUpScreen()
             }
 
             ElevatedButton(onClick = {
-                signUp(password, password2)
+                signUp(password, password2, context = context)
             }, modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .padding(top = 32.dp), shape = RoundedCornerShape(12.dp))
@@ -134,15 +140,15 @@ fun SignUpScreen()
 }
 
 //  Sign up handler
-fun signUp(password: String, password2:String)
+fun signUp(password: String, password2:String, context: Context)
 {
     if(validatePassword(password, password2))
     {
-        /*appViewModel.signUp(email = email, password = password)*/
+        /*appViewModel.signUp(email = email, password = password, context = context)*/
         navController.navigate(Destination.FillProfileScreen.route)
     }   else
     {
-        Toast.makeText(activityContext ,"Passwords don't match.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,"Passwords don't match.", Toast.LENGTH_SHORT).show()
     }
 }
 

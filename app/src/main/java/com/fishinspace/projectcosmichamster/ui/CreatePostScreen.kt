@@ -3,13 +3,11 @@ package com.fishinspace.projectcosmichamster.ui
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +40,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,9 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.Destination
-import com.fishinspace.projectcosmichamster.MainActivity
 import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.appViewModel
 import com.fishinspace.projectcosmichamster.navController
 
@@ -75,6 +72,7 @@ fun CreatePostScreen()
     var postCategory by remember { mutableStateOf("") }
     var postCategoryDescription by remember { mutableStateOf("") }
     var postDescription by remember { mutableStateOf("") }
+    var context = LocalContext.current
 
     var selectedCat by remember { mutableStateOf(0) }
     var selectedSpe by remember { mutableStateOf(0) }
@@ -87,12 +85,12 @@ fun CreatePostScreen()
     {
         //  category options composable
         Row(modifier = Modifier
-            .height((0.08f * screenheight).dp)
+            .height((0.07f * screenheight).dp)
             .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically)
         {
             Icon(painter = painterResource(id = R.drawable.arrow_left_svgrepo_com), contentDescription = "home",
-                modifier = Modifier.padding(top = 18.dp, bottom = 18.dp, start = 8.dp)
+                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 8.dp)
                     .clipToBounds().rotate(0f))
             Text(text = "Post to Board", fontFamily = bison, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
                 fontSize = 28.sp, modifier = Modifier.padding(start=10.dp)
@@ -212,7 +210,7 @@ fun CreatePostScreen()
             verticalAlignment = Alignment.Bottom)
         {
             ElevatedButton(onClick = {
-                navController.navigate(Destination.ExploreScreen.route)
+                navController.navigate(Destination.PostScreen.route)
                 if(postDescription.isNotEmpty())
                 {
                     postDescription = ""
@@ -233,10 +231,12 @@ fun CreatePostScreen()
                 if(postDescription.isNotEmpty())
                 {
                     //  passes the cat, specifier and note
-                    appViewModel.postToBoard(catOptions[selectedCat], specificOptions[selectedCat]!![selectedSpe], postDescription)
+                    appViewModel.postToBoard(catOptions[selectedCat],
+                        specificOptions[selectedCat]!![selectedSpe], postDescription,
+                        context = context)
                     navController.navigate(Destination.ExploreScreen.route)
                 }else{
-                    Toast.makeText(activityContext ,"Post message cannot be empty", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,"Post message cannot be empty", Toast.LENGTH_SHORT).show()
                 }
             }, modifier = Modifier
                 .weight(0.7f)
@@ -267,11 +267,12 @@ fun catOptionsComposable(index: Int, onClick: (Int)->Unit, selectedCat: Int)
     }
 
     Surface(modifier = Modifier.padding(8.dp)
+        .requiredHeight(32.dp)
         .clip(RoundedCornerShape(30))
         .clickable{ onClick(index) },
         shape = RoundedCornerShape(30),
-        border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.inversePrimary, MaterialTheme.colorScheme.inversePrimary))),
-        color = if(selectedCat==index){MaterialTheme.colorScheme.inversePrimary}else{MaterialTheme.colorScheme.surface}
+        border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))),
+        color = if(selectedCat==index){MaterialTheme.colorScheme.secondary}else{MaterialTheme.colorScheme.surface}
     )
     {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 6.dp))
@@ -309,11 +310,12 @@ fun catSpecificComposable(index: Int, onClick: (Int)->Unit, selectedSpe: Int, se
     }
 
     Surface(modifier = Modifier.padding(8.dp)
+        .requiredHeight(32.dp)
         .clip(RoundedCornerShape(30))
         .clickable{ onClick(index) },
         shape = RoundedCornerShape(30),
-        border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.inversePrimary, MaterialTheme.colorScheme.inversePrimary))),
-        color = if(selectedSpe==index){MaterialTheme.colorScheme.inversePrimary}else{MaterialTheme.colorScheme.surface}
+        border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))),
+        color = if(selectedSpe==index){MaterialTheme.colorScheme.secondary}else{MaterialTheme.colorScheme.surface}
     )
     {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp, end = 12.dp))

@@ -4,16 +4,21 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,12 +27,15 @@ import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,10 +46,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -56,7 +68,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fishinspace.projectcosmichamster.Destination
 import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.appViewModel
 import com.fishinspace.projectcosmichamster.navController
 import kotlinx.coroutines.delay
@@ -76,18 +87,26 @@ fun SignInScreen()
 
     //  Reinitiates the view model when user logs out
     var init by remember { mutableStateOf(false)}
+    var initProfile by remember { mutableStateOf(false)}
+    if(!initProfile)
+    {
+        appViewModel.initUserProfile(LocalContext.current)
+        initProfile = true
+    }
     if(!init)
     {
         appViewModel = viewModel()
         init = true
         Log.d("viewmodel", "viewModel re-initialised")
     }
-
+    Log.d("viewmodel", "viewModel re-initialised")
     //  Stores variables for email and password when logging in
     var email by remember { mutableStateOf("")}
     var password by remember { mutableStateOf("")}
 
     val screenheight = LocalConfiguration.current.screenHeightDp
+
+    var context = LocalContext.current
 
     Box()
     {
@@ -111,66 +130,113 @@ fun SignInScreen()
                         .weight(0.5f)
                         .padding(24.dp)
                         .clipToBounds(),
+                    tint = MaterialTheme.colorScheme.secondary
                 )
                 Text(text = stringResource(id = R.string.app_name), modifier = Modifier
                     .padding(top = 12.dp), fontFamily = bison,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp)
                 Text(text = "Sign-In", modifier = Modifier, fontFamily = bison,
                     fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 24.sp)
             }
 
-            Column(modifier = Modifier.height((0.5f * screenheight).dp), verticalArrangement = Arrangement.Center)
+            Column(modifier = Modifier.height((0.5f * screenheight).dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally)
             {
-                //  Has the input composable that captures email input
-                EmailComposable(email, onChange = {email = it})
-
-                Row(horizontalArrangement = Arrangement.Start, modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .padding(bottom = 20.dp, top = 4.dp))
+                AnimatedVisibility(visible = !appViewModel.isLoggedIn(),
+                    modifier = Modifier.weight(0.6f))
                 {
-                    Text(text = "EMAIL", modifier = Modifier.alpha(0.6f), fontFamily = bison,
-                        fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
-                }
-
-                //  Has the input composable that captures password input
-                PasswordComposable(password, onChange = {password = it},
-                    onFocus = {if(it.isFocused) scope.launch { delay(300); relocation.bringIntoView() }},
-                    passwordType = PasswordType.NORMAL,
-                    onDone = {if(validateCreds(email, password)){
-                            appViewModel.signIn(email = email, password = password)
-                        }else{
-                            Toast.makeText(activityContext, "Email or password cannot be empty!", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                )
-
-                Row(horizontalArrangement = Arrangement.Start, modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .padding(bottom = 20.dp, top = 4.dp))
-                {
-                    Text(text = "PASSWORD", modifier = Modifier.alpha(0.6f), fontFamily = bison,
-                        fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
-                }
-
-                ElevatedButton(onClick = {
-                    if(validateCreds(email, password)){
-                        appViewModel.signIn(email = email, password = password)
-                    }else{
-                        Toast.makeText(activityContext, "Email or password cannot be empty!", Toast.LENGTH_SHORT).show()
-                    } },
-                    modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .padding(top = 32.dp), shape = RoundedCornerShape(12.dp))
-                {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
+                    Column(verticalArrangement = Arrangement.Bottom,
+                        modifier = Modifier)
                     {
-                        Column(modifier = Modifier.weight(0.9f), horizontalAlignment = Alignment.CenterHorizontally)
+                        Column(modifier = Modifier
+                            .weight(0.5f)
+                            .fillMaxHeight(), verticalArrangement = Arrangement.Bottom)
                         {
-                            Text("Log In", fontFamily = bison,
-                                fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
+                            //  Has the input composable that captures email input
+                            EmailComposable(email, onChange = {email = it})
+
+                            Row(horizontalArrangement = Arrangement.Start, modifier = Modifier
+                                .fillMaxWidth(0.7f)
+                                .padding(bottom = 20.dp, top = 4.dp))
+                            {
+                                Text(text = "EMAIL", modifier = Modifier.alpha(0.6f), fontFamily = bison,
+                                    fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
+                            }
+                        }
+
+                        Column(modifier = Modifier
+                            .weight(0.5f)
+                            .fillMaxHeight(), verticalArrangement = Arrangement.Center)
+                        {
+                            //  Has the input composable that captures password input
+                            PasswordComposable(password, onChange = {password = it},
+                                onFocus = {if(it.isFocused) scope.launch { delay(300); relocation.bringIntoView() }},
+                                passwordType = PasswordType.NORMAL,
+                                onDone = {if(validateCreds(email, password)){
+                                    appViewModel.signIn(email = email, password = password, context = context)
+                                }else{
+                                    Toast.makeText(context, "Email or password cannot be empty!", Toast.LENGTH_SHORT).show()
+                                }
+                                }
+                            )
+
+                            Row(horizontalArrangement = Arrangement.Start, modifier = Modifier
+                                .fillMaxWidth(0.7f)
+                                .padding(bottom = 20.dp, top = 4.dp))
+                            {
+                                Text(text = "PASSWORD", modifier = Modifier.alpha(0.6f), fontFamily = bison,
+                                    fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
+                            }
                         }
                     }
                 }
+
+                //  Display profile for smart log in
+                AnimatedVisibility(visible = appViewModel.isLoggedIn(),
+                    modifier = Modifier.weight(0.6f))
+                {
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                    )
+                    {
+                        UserProfileComposable()
+                    }
+                }
+
+                Column(modifier = Modifier
+                    .weight(0.4f)
+                    .fillMaxWidth(), verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally)
+                {
+                    ElevatedButton(onClick = {
+                        if(appViewModel.isLoggedIn())
+                        {
+                            appViewModel.initHomescreen(context = context)
+                        } else if(validateCreds(email, password)){
+                            appViewModel.signIn(email = email, password = password, context = context)
+                        }else{
+                            Toast.makeText(context, "Email or password cannot be empty!", Toast.LENGTH_SHORT).show()
+                        } },
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .padding(top = 32.dp), shape = RoundedCornerShape(12.dp))
+                    {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
+                        {
+                            Column(modifier = Modifier.weight(0.9f), horizontalAlignment = Alignment.CenterHorizontally)
+                            {
+                                Text("Log In", fontFamily = bison,
+                                    fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 18.sp)
+                            }
+                        }
+                    }
+                }
+
             }
 
             Column(modifier = Modifier.height((0.2f * screenheight).dp),
@@ -213,6 +279,37 @@ fun SignInScreen()
                 }
             }
         }
+    }
+}
+
+//  Displays profile picture of user currently logged in
+@Composable
+fun UserProfileComposable()
+{
+    ElevatedCard(shape = RoundedCornerShape(100), modifier = Modifier
+        .padding(2.dp)
+        .clip(shape = RoundedCornerShape(50))
+        .clipToBounds()
+        .requiredSize(140.dp)
+        .clipToBounds()
+        .border(
+            3.dp,
+            color = MaterialTheme.colorScheme.inversePrimary,
+            shape = RoundedCornerShape(50)
+        ),
+        colors =  CardDefaults.cardColors(containerColor = Color.Transparent))
+    {
+        Image(
+            appViewModel.getUserImageQuick(LocalContext.current),
+            contentDescription = "user profile picture",
+            modifier = Modifier
+                .scale(1f)
+                .clip(shape = RoundedCornerShape(50))
+                .clickable {
+                    /**/
+                },
+            contentScale = ContentScale.Crop,
+        )
     }
 }
 

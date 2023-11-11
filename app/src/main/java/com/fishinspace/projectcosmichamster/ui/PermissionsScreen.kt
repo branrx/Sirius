@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +53,7 @@ import java.util.concurrent.Executors
 @Composable
 fun PermissionsScreen()
 {
+    val context = LocalContext.current
     //  If SDK lower than 33 use READ_EXTERNAL_STORAGE else ...
     rwPermission = if(Build.VERSION.SDK_INT>=33)
     {
@@ -80,7 +82,7 @@ fun PermissionsScreen()
     var isGrantedGlobal by remember{ mutableStateOf(false) }
 
     //  Check if permission is granted
-    isGrantedGlobal = checkPermission(permissionChk)
+    isGrantedGlobal = checkPermission(permissionChk, context = context)
 
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission(), onResult = {
             isGranted -> isGrantedGlobal = isGranted
@@ -91,7 +93,7 @@ fun PermissionsScreen()
     {
         while (!isGrantedGlobal)
         {
-            isGrantedGlobal = checkPermission(permissionChk)
+            isGrantedGlobal = checkPermission(permissionChk, context = context)
             Log.d("Permission Debugging", "${permissionChk},${isGrantedGlobal},${currentPage}")
             delay(200)
         }
@@ -119,10 +121,12 @@ fun PermissionsScreen()
                         .weight(0.5f)
                         .padding(24.dp)
                         .clipToBounds(),
+                    tint = MaterialTheme.colorScheme.secondary
                 )
                 Text(text = stringResource(id = R.string.app_name), modifier = Modifier
                     .padding(top = 12.dp), fontFamily = bison,
-                    fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp)
+                    fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 40.sp,
+                    color = MaterialTheme.colorScheme.secondary)
                 Text(text = "Sign-In", modifier = Modifier.alpha(0f), fontFamily = bison,
                     fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, fontSize = 24.sp)
             }
@@ -212,7 +216,7 @@ fun PermissionsScreen()
                         },
                         modifier = Modifier
                             .padding(start = 2.dp)
-                            .padding(bottom = 32.dp)
+                            .padding(bottom = 8.dp)
                             .fillMaxHeight(0.35f)
                             .fillMaxWidth(0.7f)
                     ) {

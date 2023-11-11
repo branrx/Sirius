@@ -4,8 +4,6 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.fishinspace.projectcosmichamster.appViewModel
-import com.fishinspace.projectcosmichamster.buildNotification
-import com.fishinspace.projectcosmichamster.notifier
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -300,8 +298,8 @@ val newMessagesListener = object: ChildEventListener
             }
 
             //  send a notification
-            val notificationBuilder = buildNotification(userID, msgData["msg"].toString(), "1")
-            notifier(notificationBuilder)
+            //val notificationBuilder = buildNotification(userID, msgData["msg"].toString(), "1")
+            //notifier(notificationBuilder)
 
             //  save
             //  move the message into unread messages
@@ -372,6 +370,8 @@ val discoveredListener = object: ChildEventListener
 {
     override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
         Log.d("discoveredListener", "onChildAdded:" + snapshot.key!! + snapshot.value)
+        appViewModel.isDiscoverLoading = true
+        appViewModel.timerDiscoverLoading += 1
         appViewModel.populateDiscovery(snapshot.value.toString(), snapshot.key!!)
         appViewModel.discoveredCount = appViewModel.friendsDetailList.value.friendsCount
     }
@@ -398,8 +398,10 @@ val postsListener = object: ChildEventListener
 {
     override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
         Log.d("postsListener", "onChildAdded:" + snapshot.key!! + snapshot.value)
+        appViewModel.isPostsLoading = true
+        appViewModel.timerPostsLoading += 1
         var note = ""
-        var userID = snapshot.key.toString()
+        val userID = snapshot.key.toString()
         var time = ""
         var cat = ""
         var specifier = ""
@@ -410,7 +412,7 @@ val postsListener = object: ChildEventListener
         time = snapshot.child("time").value.toString()
 
         //  get username and gender
-        var ref = appViewModel.dbObject.reference.child("users").child(userID).child("publicInfo")
+        val ref = appViewModel.dbObject.reference.child("users").child(userID).child("publicInfo")
         var username = ""
         var gender = ""
 
@@ -418,7 +420,7 @@ val postsListener = object: ChildEventListener
             username = nameObj.getValue<String>().toString()
             ref.child("gender").get().addOnSuccessListener {genderObj->
                 gender = genderObj.getValue<String>().toString()
-                var tempPost = PostClass(userID = userID, note = note, time = time.toLong(), cat = cat, specifier = specifier,
+                val tempPost = PostClass(userID = userID, note = note, time = time.toLong(), cat = cat, specifier = specifier,
                 username = username, gender = gender)
                 appViewModel.addPost(tempPost)
             }
@@ -440,6 +442,36 @@ val postsListener = object: ChildEventListener
 
     override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
         Log.d("postsListener", "onChildMoved:" + snapshot.value!!)
+    }
+}
+
+val availableMinorListener = object: ChildEventListener
+{
+    override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+        Log.d("availableMinorListener", "onChildAdded:" + snapshot.key!! + snapshot.value)
+        val zoneid = snapshot.key.toString()
+        val lat = snapshot.child("lat").value.toString().toDouble()
+        val lng = snapshot.child("lng").value.toString().toDouble()
+        val radius = snapshot.child("radius").value.toString().toFloat()
+        val geoFenceObj = getGeofence(zoneid, lat, lng, radius)
+        buildFences(geoFenceObj)
+    }
+
+    override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+        Log.d("availableMinorListener", "onChildChanged:" + snapshot.key!!)
+    }
+
+    override fun onChildRemoved(snapshot: DataSnapshot) {
+        Log.d("availableMinorListener", "onChildRemoved:" + snapshot.value!!)
+        //removeGeofence(listOf(snapshot.key.toString()))
+    }
+
+    override fun onCancelled(error: DatabaseError) {
+        Log.d("availableMinorListener", "onCancelled:" + error.message)
+    }
+
+    override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+        Log.d("availableMinorListener", "onChildMoved:" + snapshot.value!!)
     }
 }
 

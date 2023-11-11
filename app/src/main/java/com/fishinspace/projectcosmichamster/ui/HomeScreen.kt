@@ -7,6 +7,8 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
@@ -59,6 +62,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -73,6 +78,7 @@ import com.fishinspace.projectcosmichamster.R
 import com.fishinspace.projectcosmichamster.appViewModel
 import com.fishinspace.projectcosmichamster.navController
 import com.fishinspace.projectcosmichamster.ui.theme.ProjectCosmicHamsterTheme
+import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 
 var yellow = Color(0XFFffe3c0)
@@ -94,14 +100,27 @@ fun HomeScreen()
     val postsList by appViewModel.postsList.collectAsState()
     val postsCount = postsList.postsCount
     val usersCount = listA.discoveredCount
+    var isDiscoverLoading by remember { mutableStateOf(false) }
+    val screenheight = LocalConfiguration.current.screenHeightDp
     Log.d("discovered count -- Request", listA.discoveredCount.toString())
     Log.d("posts count", postsList.postsCount.toString())
+
+    LaunchedEffect(key1 = appViewModel.timerDiscoverLoading)
+    {
+        if(appViewModel.isDiscoverLoading)
+        {
+            isDiscoverLoading = true
+            delay(4000)
+            isDiscoverLoading = false
+            appViewModel.isDiscoverLoading = false
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally)
     {
         //  top bar
         Row(modifier = Modifier
-            .requiredHeight(60.dp)
+            .height((0.07f * screenheight).dp)
             .fillMaxWidth())
         {
             topBarComposable()
@@ -217,61 +236,76 @@ fun HomeScreen()
         //  main screen
         Surface(modifier = Modifier
             .weight(0.9f)
-            .padding(8.dp)
+            .padding(top = 2.dp, start = 8.dp, end = 8.dp)
             .shadow(0.dp),
             shape = RoundedCornerShape(12.dp),
         )
         {
             //  user profile
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .weight(1f)
-                .padding(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            )
+            Box(modifier = Modifier
+                .fillMaxSize())
             {
-                AnimatedVisibility(visible = /*discoveredAvailable*/true)
+                Column(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                )
                 {
-                    LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxSize())
+                    AnimatedVisibility(visible = /*discoveredAvailable*/true)
                     {
-                        if(currentView == "discover")
+                        LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxSize())
                         {
-                            //  Shows the people in the zone
-                            items(items = listA.discoveredDetails, key = { item -> item.uid})
-                            { item ->
-                                discoverMainComposable(item)
-                            }
-                        }
-
-                        if(currentView == "board")
-                        {
-                            var posts: List<PostClass> = listOf()
-
-                            if(filterBy!="none")
+                            if(currentView == "discover")
                             {
-                                posts = FilterBy(posts = postsList.postsList, filterBy = filterBy)
-                            }   else
-                            {
-                                posts = postsList.postsList
+                                //  Shows the people in the zone
+                                items(items = listA.discoveredDetails, key = { item -> item.uid})
+                                { item ->
+                                    discoverMainComposable(item)
+                                }
                             }
 
-                            items(items = posts, key = { item -> item.userID})
+                            if(currentView == "board")
                             {
-                                    item ->
-                                Column(/*modifier = Modifier.animateItemPlacement(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))*/)
+                                var posts: List<PostClass> = listOf()
+
+                                if(filterBy!="none")
                                 {
-                                    boardMessageComposable(item)
+                                    posts = FilterBy(posts = postsList.postsList, filterBy = filterBy)
+                                }   else
+                                {
+                                    posts = postsList.postsList
+                                }
+
+                                items(items = posts, key = { item -> item.userID})
+                                {
+                                        item ->
+                                    Column(/*modifier = Modifier.animateItemPlacement(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))*/)
+                                    {
+                                        boardMessageComposable(item)
+                                    }
                                 }
                             }
                         }
                     }
+
+                    //  no messages composable
+                    AnimatedVisibility(visible = !discoveredAvailable)
+                    {
+                        noDiscoveredComposable()
+                    }
                 }
 
-                //  no messages composable
-                AnimatedVisibility(visible = !discoveredAvailable)
+                //  Loading icon
+                Column(modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center)
                 {
-                    noDiscoveredComposable()
+                    AnimatedVisibility(visible = isDiscoverLoading, exit = fadeOut(tween(500)),
+                        enter = fadeIn(tween(500)))
+                    {
+                        LoadingOverlay()
+                    }
                 }
             }
         }
@@ -292,237 +326,12 @@ fun HomeScreen()
             )
         }*/
 
-        Column(modifier = Modifier
-            .requiredHeight(60.dp)
-            .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        )
-        {
-            ElevatedButton(onClick = { navController.navigate(Destination.PostScreen.route) }, modifier = Modifier.fillMaxWidth(0.5f))
-            {
-                Text(text = "post", fontFamily = bison,
-                    fontWeight = FontWeight.SemiBold, fontSize = 20.sp, letterSpacing = 1.sp)
-            }
-        }
-
         //  navigation bar
         Column(modifier = Modifier
-            .requiredHeight(60.dp)
+            .height((0.07f * screenheight).dp)
             .fillMaxWidth())
         {
             navigationComposable()
-        }
-    }
-}
-
-@Composable
-fun FilterComposable(index: Int, onClick: (String)->Unit, filterBy: String)
-{
-    var options = listOf<String>()
-    var filter = filterOptions[index].toString()
-
-    Surface(modifier = Modifier
-        .padding(start = 8.dp)
-        .clip(RoundedCornerShape(30))
-        .clickable { onClick(filter) },
-        shape = RoundedCornerShape(100),
-        border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.inversePrimary, MaterialTheme.colorScheme.inversePrimary))),
-        color = if(filterBy==filter){MaterialTheme.colorScheme.inversePrimary}else{MaterialTheme.colorScheme.surface}
-    )
-    {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp, end = 12.dp))
-        {
-            Text(text = filter, modifier = Modifier.padding(),
-                fontFamily = bison, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp)
-        }
-    }
-}
-
-@Composable
-fun boardMessageComposable(post: PostClass)
-{
-    var isReplying by remember { mutableStateOf(false)}
-    var onDeletePost by remember { mutableStateOf(false) }
-    val rowValue = remember{ androidx.compose.animation.core.Animatable(0f) }
-    LaunchedEffect(Unit)
-    {
-        rowValue.animateTo(1f, animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow))
-    }
-
-    var postCat = ""
-    var icon = 0
-    when(post.cat)
-    {
-        "accommodation" -> { icon = R.drawable.home_svgrepo_com__1_; postCat = "accommodation" }
-        "academic" -> { icon = R.drawable.square_academic_cap_svgrepo_com; postCat = "academic"}
-        "miscellaneous" -> { icon = R.drawable.emoji_funny_square_svgrepo_com; postCat = "miscellaneous" }
-        "buy/sell" -> { icon = R.drawable.cart_large_2_svgrepo_com; postCat = "buy/sell"}
-    }
-
-    ElevatedCard(modifier = Modifier
-        .padding(top = 8.dp)
-        .scale(1f)//rowValue.value
-        .clip(
-            RoundedCornerShape(
-                bottomStart = 8.dp,
-                topEnd = 8.dp,
-                bottomEnd = 8.dp,
-                topStart = 4.dp
-            )
-        )
-        .clickable {
-            if (!isReplying) {
-                isReplying = true
-            }
-        },
-        shape = RoundedCornerShape(bottomStart = 8.dp, topEnd = 8.dp, bottomEnd = 8.dp, topStart = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    )
-    {
-        //boardPicComposable("requesterUID")
-        Column(modifier = Modifier.animateContentSize(), verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally)
-        {
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp)
-                .requiredHeight(32.dp)
-                ,verticalAlignment = Alignment.Top)
-            {
-                Surface(modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(end = 0.dp)
-                    .padding(bottom = 0.dp),
-                    shape = RoundedCornerShape(topEndPercent = 0),
-                    color = Color.Transparent
-                )
-                {
-                    Column(modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 12.dp, end = 0.dp),
-                        verticalArrangement = Arrangement.Center
-                    )
-                    {
-                        Text(text = post.username, fontFamily = yanone,
-                            fontWeight = FontWeight.SemiBold, fontSize = 18.sp, letterSpacing = 1.sp)
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(0.5f))
-
-                //  timestamp, or time till expiry
-                Surface(modifier = Modifier
-                    .fillMaxWidth(1f)
-                    .fillMaxHeight()
-                    .padding(end = 0.dp)
-                    .padding(bottom = 0.dp),
-                    shape = RoundedCornerShape(topEndPercent = 25, bottomStartPercent = 0),
-                    color = Color.Transparent
-                )
-                {
-                    Column(modifier = Modifier
-                        .padding(end = 10.dp), horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.Center
-                    )
-                    {
-                        Text(text = "5HRS", modifier = Modifier.padding(2.dp),
-                            fontFamily = bison, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                    }
-
-                }
-            }
-
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-                .requiredHeight(32.dp)
-                ,verticalAlignment = Alignment.CenterVertically)
-            {
-                Column()
-                {
-                    Icon(painter = painterResource(id = icon), contentDescription = "home icon",
-                    modifier = Modifier.padding(6.dp))
-                }
-
-                //  category name
-                Surface(modifier = Modifier.padding(start = 8.dp),
-                    shape = RoundedCornerShape(25),
-                    border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(peach, MaterialTheme.colorScheme.inversePrimary))),
-                )
-                {
-                    Column()
-                    {
-                        Text(text = postCat, modifier = Modifier.padding(4.dp),
-                            fontFamily = bison, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                    }
-                }
-
-                //  category: specifier
-                Column(modifier = Modifier.padding(start = 8.dp))
-                {
-                    Text(text = "is looking for ${post.specifier}", modifier = Modifier.padding(2.dp),
-                        fontFamily = yanone, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                }
-            }
-
-            Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .padding(top = 0.dp)
-                    .alpha(
-                        if (isReplying) {
-                            0.3f
-                        } else {
-                            0f
-                        }
-                    ))
-
-            //  show post description if post is clicked
-            when(isReplying)
-            {
-                true -> { postDescription(post.note) }
-                else -> { /*startReplyComposable(onReplyTap = {isReplying = true})*/ }
-            }
-
-
-            Divider(thickness = Dp.Hairline, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .padding(top = 0.dp)
-                    .alpha(0f)
-            )
-
-            //  show post reply if post is clicked
-            when(isReplying)
-            {
-                true -> {
-                    if (appViewModel.currentUserUid == post.userID) {
-                        AnimatedVisibility(visible = onDeletePost)
-                        {
-                            ConfirmDeletePost(onDeny = { onDeletePost = false }, proceedDelete = {
-                                appViewModel.deletePost();
-                                onDeletePost = false; isReplying = false
-                            })
-                        }
-
-                        AnimatedVisibility(visible = !onDeletePost)
-                        {
-                            EditBoardPost(category = post.cat,
-                                specifier = post.specifier,
-                                note = post.note,
-                                onDelete = { onDeletePost = true })
-                        }
-                    }
-                    replyInputComposable(onCancelReply = {
-                        isReplying = false; onDeletePost = false
-                    },
-                        post,
-                        onSend = { isReplying = false },
-                        onDeletePost = onDeletePost
-                    )
-                }
-                else -> { startReplyComposable(onReplyTap = {isReplying = true}) }
-            }
         }
     }
 }
@@ -834,87 +643,91 @@ fun ZoneInfoComposable(type: String, postsCount: Int, usersCount: Int)
             .padding(4.dp)
     )
     {
-        Column(//modifier = Modifier.background(zoneType),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(4.dp))
+        Row(horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier)
         {
-            Row(horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.Top,
-                modifier = Modifier.weight(0.7f))
+            //  Displays the name
+            Column(horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.weight(0.4f))
             {
-                //  Displays the name
-                Column(horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.weight(0.25f))
-                {
-                    Row(horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .weight(0.7f)
-                            .fillMaxWidth(0.3f))
-                    {
-                        Icon(painter = painterResource(id = R.drawable.notes_svgrepo_com), contentDescription = "user count icon",
-                            modifier = Modifier
-                                .clipToBounds()
-                                .padding(2.dp))
-                        Text(postsCount.toString(), fontSize = 24.sp, fontFamily = bison, fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.sp)
-                    }
-
-                    Row(horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.Top,
-                        modifier = Modifier.weight(0.3f))
-                    {
-                        Text("posts", fontSize = 12.sp, fontFamily = bison, fontWeight = FontWeight.Thin,
-                            letterSpacing = 1.sp)
-                    }
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.weight(0.25f))
-                {
-                    Row(horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .weight(0.7f)
-                            .fillMaxWidth(0.3f))
-                    {
-                        Icon(painter = painterResource(id = R.drawable.profile_circle_svgrepo_com), contentDescription = "user count icon",
-                            modifier = Modifier
-                                .clipToBounds()
-                                .padding(2.dp))
-                        Text(usersCount.toString(), fontSize = 24.sp, fontFamily = bison, fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.sp)
-                    }
-
-                    Row(horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.Top,
-                        modifier = Modifier.weight(0.3f))
-                    {
-                        Text("users", fontSize = 12.sp, fontFamily = bison, fontWeight = FontWeight.Thin,
-                            letterSpacing = 1.sp)
-                    }
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .weight(0.3f)
-                    .background(Color.Transparent)
-                    .fillMaxWidth())
-            {
-                Icon(painter = painterResource(id = R.drawable.map_point_svgrepo_com), contentDescription = "user count icon",
+                Row(horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clipToBounds()
-                        .padding(4.dp))
-                Text("LEFKE", fontSize = 16.sp, fontFamily = bison, fontWeight = FontWeight.Normal,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(end = 12.dp))
+                        .weight(0.7f))
+                {
+                    Icon(painter = painterResource(id = R.drawable.notes_svgrepo_com), contentDescription = "user count icon",
+                        modifier = Modifier
+                            .clipToBounds()
+                            .padding(16.dp))
+                    Text(postsCount.toString(), fontSize = 24.sp, fontFamily = bison, fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp)
+                }
+
+                Row(horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.Top,
+                    modifier = Modifier.weight(0.3f))
+                {
+                    Text("posts", fontSize = 16.sp, fontFamily = bison, fontWeight = FontWeight.Thin,
+                        letterSpacing = 1.sp)
+                }
             }
 
+            Column(horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .weight(0.2f)
+                    .background(Color.Transparent)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(4.dp))
+            {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(0.7f))
+                {
+                    Icon(painter = painterResource(id = R.drawable.map_point_svgrepo_com), contentDescription = "user count icon",
+                        modifier = Modifier
+                            .clipToBounds()
+                            .padding(16.dp))
+                }
+
+                Row(verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(0.3f))
+                {
+                    Text("LEFKE", fontSize = 18.sp, fontFamily = bison, fontWeight = FontWeight.Normal,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(0.dp))
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.weight(0.4f))
+            {
+                Row(horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(0.7f))
+                {
+                    Icon(painter = painterResource(id = R.drawable.profile_circle_svgrepo_com), contentDescription = "user count icon",
+                        modifier = Modifier
+                            .clipToBounds()
+                            .padding(16.dp))
+                    Text(usersCount.toString(), fontSize = 24.sp, fontFamily = bison, fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp)
+                }
+
+                Row(horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.Top,
+                    modifier = Modifier.weight(0.3f))
+                {
+                    Text("users", fontSize = 16.sp, fontFamily = bison, fontWeight = FontWeight.Thin,
+                        letterSpacing = 1.sp)
+                }
+            }
         }
 
     }
@@ -1019,7 +832,7 @@ fun boardPicComposable(requesterUID: String)
 @Composable
 fun discoveredPicComposable(requesterUID: String)
 {
-    var color = MaterialTheme.colorScheme.inversePrimary
+    var color = MaterialTheme.colorScheme.secondary
     Column(modifier = Modifier
         .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally)
     {
@@ -1142,6 +955,7 @@ fun discoveredDetailsComposable(requesterMap: UserClass)
 @Composable
 fun discoveredRespondComposable(requesterMap: UserClass)
 {
+    val context = LocalContext.current
     Surface(modifier= Modifier
         .padding(top = 0.dp, start = 0.dp, end = 12.dp, bottom = 0.dp)
         .requiredHeight(40.dp)
@@ -1174,7 +988,7 @@ fun discoveredRespondComposable(requesterMap: UserClass)
                 }
             }
 
-            ElevatedButton(onClick = { appViewModel.sendRequest(requesterMap.uid) },
+            ElevatedButton(onClick = { appViewModel.sendRequest(requesterMap.uid, context = context) },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .fillMaxHeight(0.8f)
@@ -1301,234 +1115,219 @@ fun memoryComposable(value: String, onChange: (String) -> Unit)
 @Composable
 fun navigationComposable()
 {
-    //Divider(thickness = Dp.Hairline, color = Color.White, modifier = Modifier.padding(start=12.dp, end = 12.dp))
-    ElevatedCard(modifier = Modifier
-        .padding(4.dp),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
-        //color = MaterialTheme.colorScheme.background
-    )
+    Surface(color = MaterialTheme.colorScheme.secondary.copy(0.1f),
+        //shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+        )
     {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
+        Surface(modifier = Modifier
+            .padding(top = 1.dp),
+            //shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+            //color = MaterialTheme.colorScheme.background
         )
         {
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(0.5f))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+            )
             {
-                Box {
-                    Surface(color = if (appViewModel.activeWindow == 0) {
-                        Color.Transparent
-                    } else {
-                        Color.Transparent
-                    }, shape = RoundedCornerShape(50),
-                        modifier = Modifier
-                            //.fillMaxHeight(1f)
-                            .align(Alignment.Center)
-                            .aspectRatio(1f)
-                            .clip(shape = RoundedCornerShape(50))
-                            .fillMaxWidth(1f)
-                            .clickable {
-                                appViewModel.changeActiveWindow(0)
-                                navController.navigate(Destination.MessagesScreen.route)
-                            }
-                    )
-                    {
-
-                    }
-                    Icon(
-                        painter = painterResource(id = R.drawable.messages_svgrepo_com),
-                        contentDescription = "chats icon",
-                        modifier = Modifier
-                            .scale(0.5f)
-                            .align(Alignment.Center)
-                            .alpha(
-                                if (appViewModel.activeWindow == 0) {
-                                    1f
-                                } else {
-                                    0.5f
-                                }
-                            )
-                            .padding(start = 0.dp),
-                        //tint = if(appViewModel.activeWindow==0){ Color.Unspecified }else{ Color.Gray}
-                    )
-
-                    Divider(thickness = 2.dp, color = if (appViewModel.activeWindow == 0) {
-                        MaterialTheme.colorScheme.inversePrimary
-                    } else {
-                        Color.Transparent
-                    },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 4.dp)
-                            .requiredWidth(30.dp))
-                }
-
-                //Text(text = "chats", modifier = Modifier.weight(0.2f))
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center, modifier = Modifier.weight(0.5f))
-            {
-                Box {
-                    Surface(
-                        color = if (appViewModel.activeWindow == 1) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(0.5f))
+                {
+                    Box {
+                        Surface(color = if (appViewModel.activeWindow == 0) {
                             Color.Transparent
                         } else {
                             Color.Transparent
                         }, shape = RoundedCornerShape(50),
-                        modifier = Modifier
-                            //.fillMaxHeight(1f)
-                            .align(Alignment.Center)
-                            .aspectRatio(1f)
-                            .clip(shape = RoundedCornerShape(50))
-                            .fillMaxWidth(1f)
-                            .clickable {
-                                appViewModel.changeActiveWindow(1)
-                                Executors
-                                    .newSingleThreadExecutor()
-                                    .execute {
-                                        appViewModel.updateDiscovered()
+                            modifier = Modifier
+                                //.fillMaxHeight(1f)
+                                .align(Alignment.Center)
+                                .aspectRatio(1f)
+                                .clip(shape = RoundedCornerShape(50))
+                                .fillMaxWidth(1f)
+                                .clickable {
+                                    appViewModel.changeActiveWindow(0)
+                                    navController.navigate(Destination.MessagesScreen.route)
+                                }
+                        )
+                        {
+
+                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.messages_svgrepo_com),
+                            contentDescription = "chats icon",
+                            modifier = Modifier
+                                .scale(0.6f)
+                                .align(Alignment.Center)
+                                .alpha(
+                                    if (appViewModel.activeWindow == 0) {
+                                        1f
+                                    } else {
+                                        0.5f
                                     }
-                                navController.navigate(Destination.ExploreScreen.route)
+                                )
+                                .padding(start = 0.dp),
+                            tint = if(appViewModel.activeWindow == 0)
+                            {
+                                MaterialTheme.colorScheme.secondary
+                            }   else{
+                                MaterialTheme.colorScheme.secondary.copy(0.7f)
                             }
-                    )
-                    {
-
+                        )
                     }
-                    Icon(
-                        painter = painterResource(id = R.drawable.compass_remake),
-                        contentDescription = "explore icon",
-                        modifier = Modifier
-                            .alpha(
-                                if (appViewModel.activeWindow == 1) {
-                                    1f
-                                } else {
-                                    0.5f
-                                }
-                            )
-                            .scale(0.5f)
-                            .align(Alignment.Center),
-                    )
-
-                    Divider(thickness = 2.dp, color = if (appViewModel.activeWindow == 1) {
-                        MaterialTheme.colorScheme.inversePrimary
-                    } else {
-                        Color.Transparent
-                    },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 4.dp)
-                            .requiredWidth(30.dp))
                 }
-            }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center, modifier = Modifier.weight(0.5f))
-            {
-                Box {
-                    Surface(
-                        color = if (appViewModel.activeWindow == 2) {
-                            Color.Transparent
-                        } else {
-                            Color.Transparent
-                        }, shape = RoundedCornerShape(50),
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .aspectRatio(1f)
-                            .fillMaxWidth(1f)
-                            .clip(shape = RoundedCornerShape(50))
-                            .clipToBounds()
-                            .clickable {
-                                appViewModel.changeActiveWindow(2)
-                                navController.navigate(Destination.ProfileScreen.route)
-                            }
-                    )
-                    {
-
-                    }
-                    Icon(
-                        painter = painterResource(id = R.drawable.profile_circle_svgrepo_com),
-                        contentDescription = "profile icon",
-                        modifier = Modifier
-                            .alpha(
-                                if (appViewModel.activeWindow == 2) {
-                                    1f
-                                } else {
-                                    0.5f
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center, modifier = Modifier.weight(0.5f))
+                {
+                    Box {
+                        Surface(
+                            color = if (appViewModel.activeWindow == 1) {
+                                Color.Transparent
+                            } else {
+                                Color.Transparent
+                            }, shape = RoundedCornerShape(50),
+                            modifier = Modifier
+                                //.fillMaxHeight(1f)
+                                .align(Alignment.Center)
+                                .aspectRatio(1f)
+                                .clip(shape = RoundedCornerShape(50))
+                                .fillMaxWidth(1f)
+                                .clickable {
+                                    appViewModel.changeActiveWindow(1)
+                                    Executors
+                                        .newSingleThreadExecutor()
+                                        .execute {
+                                            appViewModel.updateDiscovered()
+                                        }
+                                    navController.navigate(Destination.ExploreScreen.route)
                                 }
-                            )
-                            .scale(0.5f)
-                            .align(Alignment.Center)
-                            .padding(end = 0.dp),
-                    )
+                        )
+                        {
 
-                    Divider(thickness = 2.dp, color = if (appViewModel.activeWindow == 2) {
-                        MaterialTheme.colorScheme.inversePrimary
-                    } else {
-                        Color.Transparent
-                    },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 4.dp)
-                            .requiredWidth(30.dp))
-                }
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center, modifier = Modifier.weight(0.5f))
-            {
-                Box {
-                    Surface(
-                        color = if (appViewModel.activeWindow == 3) {
-                            Color.Transparent
-                        } else {
-                            Color.Transparent
-                        }, shape = RoundedCornerShape(50),
-                        modifier = Modifier
-                            //.fillMaxHeight(1f)
-                            .align(Alignment.Center)
-                            .aspectRatio(1f)
-                            .clip(shape = RoundedCornerShape(50))
-                            .fillMaxWidth(1f)
-                            .clickable {
-                                appViewModel.changeActiveWindow(3)
-                                Executors
-                                    .newSingleThreadExecutor()
-                                    .execute {
-                                        appViewModel.checkRequestAvailable()
-                                        appViewModel.populateRequestsDetail()
+                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.compass_remake),
+                            contentDescription = "explore icon",
+                            modifier = Modifier
+                                .alpha(
+                                    if (appViewModel.activeWindow == 1) {
+                                        1f
+                                    } else {
+                                        0.5f
                                     }
-                                navController.navigate(Destination.RequestsScreen.route)
+                                )
+                                .scale(0.6f)
+                                .align(Alignment.Center),
+                            tint = if(appViewModel.activeWindow == 1)
+                            {
+                                MaterialTheme.colorScheme.secondary
+                            }   else{
+                                MaterialTheme.colorScheme.secondary.copy(0.7f)
                             }
-                    ) {}
-                    Icon(
-                        painter = painterResource(id = R.drawable.friend_svgrepo_com),
-                        contentDescription = "profile icon",
-                        modifier = Modifier
-                            .alpha(
-                                if (appViewModel.activeWindow == 3) {
-                                    1f
-                                } else {
-                                    0.5f
-                                }
-                            )
-                            .scale(0.5f)
-                            .align(Alignment.Center)
-                            .padding(end = 0.dp),
-                    )
+                        )
+                    }
+                }
 
-                    Divider(thickness = 2.dp, color = if (appViewModel.activeWindow == 3) {
-                        MaterialTheme.colorScheme.inversePrimary
-                    } else {
-                        Color.Transparent
-                    },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 4.dp)
-                            .requiredWidth(30.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center, modifier = Modifier.weight(0.5f))
+                {
+                    Box(modifier = Modifier.fillMaxHeight()) {
+                        Surface(
+                            color = if (appViewModel.activeWindow == 2) {
+                                Color.Transparent
+                            } else {
+                                Color.Transparent
+                            }, shape = RoundedCornerShape(50),
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .aspectRatio(1f)
+                                .fillMaxWidth(1f)
+                                .clip(shape = RoundedCornerShape(50))
+                                .clipToBounds()
+                                .clickable {
+                                    appViewModel.changeActiveWindow(2)
+                                    navController.navigate(Destination.PostScreen.route)
+                                }
+                        )
+                        {
+
+                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.notes_svgrepo_com),
+                            contentDescription = "posts icon",
+                            modifier = Modifier
+                                .alpha(
+                                    if (appViewModel.activeWindow == 2) {
+                                        1f
+                                    } else {
+                                        0.5f
+                                    }
+                                )
+                                .scale(0.6f)
+                                .align(Alignment.Center)
+                                .padding(end = 0.dp),
+                            tint = if(appViewModel.activeWindow == 2)
+                            {
+                                MaterialTheme.colorScheme.secondary
+                            }   else{
+                                MaterialTheme.colorScheme.secondary.copy(0.7f)
+                            }
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center, modifier = Modifier.weight(0.5f))
+                {
+                    Box {
+                        Surface(
+                            color = if (appViewModel.activeWindow == 3) {
+                                Color.Transparent
+                            } else {
+                                Color.Transparent
+                            }, shape = RoundedCornerShape(50),
+                            modifier = Modifier
+                                //.fillMaxHeight(1f)
+                                .align(Alignment.Center)
+                                .aspectRatio(1f)
+                                .clip(shape = RoundedCornerShape(50))
+                                .fillMaxWidth(1f)
+                                .clickable {
+                                    appViewModel.changeActiveWindow(3)
+                                    Executors
+                                        .newSingleThreadExecutor()
+                                        .execute {
+                                            appViewModel.checkRequestAvailable()
+                                            appViewModel.populateRequestsDetail()
+                                        }
+                                    navController.navigate(Destination.RequestsScreen.route)
+                                }
+                        ) {}
+                        Icon(
+                            painter = painterResource(id = R.drawable.friend_svgrepo_com),
+                            contentDescription = "profile icon",
+                            modifier = Modifier
+                                .alpha(
+                                    if (appViewModel.activeWindow == 3) {
+                                        1f
+                                    } else {
+                                        0.5f
+                                    }
+                                )
+                                .scale(0.6f)
+                                .align(Alignment.Center)
+                                .padding(end = 0.dp),
+                            tint = if(appViewModel.activeWindow == 3)
+                            {
+                                MaterialTheme.colorScheme.secondary
+                            }   else{
+                                MaterialTheme.colorScheme.secondary.copy(0.7f)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -1560,13 +1359,14 @@ fun topBarComposable()
             {
                 Icon(
                     painter = painterResource(id = R.drawable.cirqle_logo_3),
-                    contentDescription = "app icon", modifier = Modifier.padding(top = 18.dp, bottom = 18.dp, start = 12.dp),
+                    contentDescription = "app icon", modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 12.dp),
+                    tint = MaterialTheme.colorScheme.secondary
                 )
                 Text(stringResource(id = R.string.app_name), fontFamily = bison, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
-                fontSize = 28.sp, modifier = Modifier.padding(start=10.dp))
+                fontSize = 28.sp, modifier = Modifier.padding(start=10.dp), color = MaterialTheme.colorScheme.secondary)
             }
 
-            //  about page icon
+            //  menu option
             Row(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
@@ -1576,6 +1376,26 @@ fun topBarComposable()
             )
             {
                 Surface(modifier = Modifier
+                    .padding(8.dp)
+                    .clip(shape = RoundedCornerShape(50))
+                    .aspectRatio(1f)
+                    .clickable { appViewModel.toggleMainMenu() },
+                )
+                {
+                    Icon(
+                        painter = painterResource(id = R.drawable.dots_three_vertical_fill_svgrepo_com),
+                        contentDescription = "menu option", modifier = Modifier
+                            .padding(8.dp)
+                            .clipToBounds()
+                            .clip(shape = RoundedCornerShape(50))
+                    )
+                }
+            }
+        }
+    }
+}
+
+/*Surface(modifier = Modifier
                     .clip(shape = RoundedCornerShape(50))
                     .aspectRatio(1f)
                     .clickable { navController.navigate(Destination.AboutScreen.route) },
@@ -1584,7 +1404,7 @@ fun topBarComposable()
                     Icon(
                         painter = painterResource(id = R.drawable.danger_circle_svgrepo_com),
                         contentDescription = "about icon", modifier = Modifier
-                            .padding(18.dp)
+                            .padding(16.dp)
                             .clip(shape = RoundedCornerShape(50))
                     )
                 }
@@ -1598,14 +1418,10 @@ fun topBarComposable()
                     Icon(
                         painter = painterResource(id = R.drawable.logout_svgrepo_com),
                         contentDescription = "logout icon", modifier = Modifier
-                            .padding(18.dp)
+                            .padding(16.dp)
                             .clip(shape = RoundedCornerShape(50))
                     )
-                }
-            }
-        }
-    }
-}
+                }*/
 
 
 

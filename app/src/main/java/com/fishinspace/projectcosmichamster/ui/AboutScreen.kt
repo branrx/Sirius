@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,13 +48,13 @@ fun AboutScreen()
             {
                 Spacer(modifier = Modifier.weight(0.1f))
                 Column(modifier = Modifier
-                    //.aspectRatio(1f)
                     .requiredSize(160.dp))
                 {
                     Icon(
                         painter = painterResource(id = R.drawable.cirqle_logo_3),
                         contentDescription = "coffee reminder logo",
                         modifier = Modifier,
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
                 Spacer(modifier = Modifier.weight(0.03f))
@@ -63,7 +64,8 @@ fun AboutScreen()
                     modifier = Modifier,
                     fontFamily = bison,
                     fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 2.sp
+                    letterSpacing = 2.sp,
+                    color = MaterialTheme.colorScheme.secondary
                 )
 
                 Text(

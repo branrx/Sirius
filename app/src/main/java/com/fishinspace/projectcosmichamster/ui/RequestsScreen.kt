@@ -1,19 +1,25 @@
 package com.fishinspace.projectcosmichamster.ui
 
 import android.util.Log
+import android.widget.Space
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
@@ -25,6 +31,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,22 +40,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fishinspace.projectcosmichamster.Destination
 import com.fishinspace.projectcosmichamster.R
 import com.fishinspace.projectcosmichamster.appViewModel
+import com.fishinspace.projectcosmichamster.navController
 
 @Composable
 fun RequestsScreen()
@@ -56,95 +71,133 @@ fun RequestsScreen()
     //  Holds all requests received from server
     //  if new request is received, UI recomposes
     val listA by appViewModel.requestsInDetailList.collectAsState()
+    val screenheight = LocalConfiguration.current.screenHeightDp
+    val showMainMenu by appViewModel.uiState.collectAsState()
     Log.d("sampled -- Request", listA.requestsInDetails.size.toString())
 
-    Column(modifier = Modifier.fillMaxSize())
+    //  Entire screen
+    Box()
     {
-        //  Top bar, holds icon and other buttons
-        Row(modifier = Modifier
-            .requiredHeight(60.dp)
-            .fillMaxWidth())
+        Column(modifier = Modifier.fillMaxSize())
         {
-            topBarComposable()
-        }
+            //  Top bar, holds icon and other buttons
+            Row(modifier = Modifier
+                .height((0.07f * screenheight).dp)
+                .fillMaxWidth())
+            {
+                topBarComposable()
+            }
 
-        Row(modifier = Modifier
-            .requiredHeight(40.dp)
-            .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
-        )
-        {
-            Surface(modifier = Modifier.fillMaxWidth(0.35f).padding(8.dp), shape = RoundedCornerShape(50),
-                border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.inversePrimary)))
+            Row(modifier = Modifier
+                .requiredHeight(40.dp)
+                .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
             )
             {
-                Row(modifier = Modifier.fillMaxSize().padding(0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center)
+                Surface(modifier = Modifier
+                    .fillMaxWidth(0.35f)
+                    .padding(8.dp), shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, brush = Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.inversePrimary)))
+                )
                 {
-                    Text(text = "REQUESTS", fontFamily = bison, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp)
+                    Row(modifier = Modifier
+                        .fillMaxSize()
+                        .padding(0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center)
+                    {
+                        Text(text = "REQUESTS", fontFamily = bison, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp)
+                    }
                 }
             }
-        }
 
-        //  Main card wrapper
-        Card(modifier = Modifier
-            .weight(0.9f)
-            .padding(8.dp)
-            .shadow(0.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        )
-        {
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .weight(1f)
-                .padding(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            //  Main card wrapper
+            Card(modifier = Modifier
+                .weight(0.9f)
+                .padding(8.dp)
+                .shadow(0.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             )
             {
-                //  Get requests count, if available display them
-                val requestsAvailable = listA.requestsInCount>0
-                AnimatedVisibility(requestsAvailable)
+                Column(modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .padding(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                )
                 {
-                    LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxSize())
+                    //  Get requests count, if available display them
+                    val requestsAvailable = listA.requestsInCount>0
+                    AnimatedVisibility(requestsAvailable)
                     {
-                        items(items = listA.requestsInDetails, key = { item -> item.uid})
-                        { item ->
-                            RequestMainComposable(item)
+                        LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxSize())
+                        {
+                            items(items = listA.requestsInDetails, key = { item -> item.uid})
+                            { item ->
+                                RequestMainComposable(item)
+                            }
+                        }
+                    }
+
+                    //  If no requests available display "no requests"
+                    AnimatedVisibility(visible = listA.requestsInCount<1,
+                        modifier = Modifier.weight(0.9f))
+                    {
+                        Column(modifier = Modifier
+                            .weight(0.9f)
+                            .fillMaxSize(), verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally)
+                        {
+                            NoEntryComposable("Requests")
                         }
                     }
                 }
+            }
 
-                //  If no requests available display "no requests"
-                AnimatedVisibility(!requestsAvailable)
-                {
-                    NoRequestsComposable()
+            //  Displays banner ad
+            /*Column(modifier = Modifier.fillMaxWidth()
+                .weight(0.1f),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom
+            )
+            {
+                AndroidView(factory = {
+                        context -> AdView(context).apply {
+                    setAdSize(AdSize.BANNER)
+                    adUnitId = "ca-app-pub-3940256099942544/6300978111"
+                    loadAd(AdRequest.Builder().build())
                 }
+                }
+                )
+            }*/
+
+            //  Navigation bar
+            Row(modifier = Modifier
+                .height((0.07f * screenheight).dp)
+                .fillMaxWidth())
+            {
+                navigationComposable()
             }
         }
 
-        //  Displays banner ad
-        /*Column(modifier = Modifier.fillMaxWidth()
-            .weight(0.1f),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom
-        )
+        //  pop up option menus
+        Column(modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End)
         {
-            AndroidView(factory = {
-                    context -> AdView(context).apply {
-                setAdSize(AdSize.BANNER)
-                adUnitId = "ca-app-pub-3940256099942544/6300978111"
-                loadAd(AdRequest.Builder().build())
-            }
-            }
-            )
-        }*/
+            //  space between menu and top bar
+            Spacer(modifier = Modifier
+                .height((0.07f * screenheight).dp)
+                .fillMaxWidth())
 
-        //  Navigation bar
-        Row(modifier = Modifier
-            .requiredHeight(60.dp)
-            .fillMaxWidth())
-        {
-            navigationComposable()
+            //  option menu
+            Column(modifier = Modifier.fillMaxWidth(0.4f),
+                horizontalAlignment = Alignment.CenterHorizontally
+                )
+            {
+                AnimatedVisibility(visible = showMainMenu.showMainMenu)
+                {
+                    MenuComposable()
+                }
+            }
         }
     }
 }
@@ -215,7 +268,7 @@ fun RequestMainComposable(item: RequesterClass)
 @Composable
 fun RequesterPicComposable(requesterUID: String)
 {
-    val color = MaterialTheme.colorScheme.inversePrimary
+    val color = MaterialTheme.colorScheme.secondary
     Column(modifier = Modifier
         .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally)
     {

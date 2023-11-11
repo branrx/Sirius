@@ -1,5 +1,7 @@
 package com.fishinspace.projectcosmichamster.ui
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -16,22 +18,22 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.scale
 import androidx.lifecycle.ViewModel
 import com.fishinspace.projectcosmichamster.Destination
-import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.activityThis
 import com.fishinspace.projectcosmichamster.auth
 import com.fishinspace.projectcosmichamster.navController
-import com.google.firebase.auth.ActionCodeSettings
-import com.google.firebase.auth.ktx.actionCodeSettings
+import com.google.android.gms.location.LocationServices
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ktx.database
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +46,7 @@ import java.io.FileOutputStream
 import java.util.concurrent.Executors
 
 
+@SuppressLint("StaticFieldLeak")
 class AppViewModel : ViewModel()
 {
     private val _uiState = MutableStateFlow(AppUiState())
@@ -90,10 +93,11 @@ class AppViewModel : ViewModel()
     val messageHighlights: StateFlow<MessageHighlightsClass> = _messageHighlights.asStateFlow()
     var _messageHighlightsCount by mutableStateOf(0)
 
+
     private val dbRoot = "https://project-cosmic-hamster-default-rtdb.europe-west1.firebasedatabase.app/"
-    val dbObject = Firebase.database(dbRoot)
-    val dbAuth = Firebase.auth
-    val dbStorage = Firebase.storage
+    lateinit var dbObject: FirebaseDatabase;
+    lateinit var dbAuth: FirebaseAuth;
+    private lateinit var dbStorage: FirebaseStorage;
 
     //  late init variables
     lateinit var postEditCategory: String
@@ -179,13 +183,13 @@ class AppViewModel : ViewModel()
 
     var imgUri: Uri? = null
 
-    var discoveredImages by mutableStateOf<ImageBitmap>(getDefaultImage())
+    var discoveredImages by mutableStateOf<ImageBitmap>(defaultImage!!)
 
-    var requesterImage by mutableStateOf<ImageBitmap>(getDefaultImage())
+    var requesterImage by mutableStateOf<ImageBitmap>(defaultImage!!)
 
-    var userProfilePicture by mutableStateOf<ImageBitmap>(getDefaultImage())
+    var userProfilePicture by mutableStateOf<ImageBitmap>(defaultImage!!)
 
-    var previousProfilePicture by mutableStateOf<ImageBitmap>(getDefaultImage())
+    var previousProfilePicture by mutableStateOf<ImageBitmap>(defaultImage!!)
 
     var isUploading by mutableStateOf(false)
 
@@ -196,6 +200,8 @@ class AppViewModel : ViewModel()
     var discoveredPool = mutableListOf<String>()
 
     var discoveredIndex by mutableIntStateOf(0)
+
+    var showMainMenu by mutableStateOf(false)
 
     var swipeOn by mutableStateOf(true)
 
@@ -210,11 +216,27 @@ class AppViewModel : ViewModel()
     //  initial loading screen
     var isLoading by mutableStateOf(false)
 
+    var geofencingClient = LocationServices.getGeofencingClient(activityThis)
+
+    //  is loading variables
+    var isDiscoverLoading by mutableStateOf(false)
+    var timerDiscoverLoading by mutableIntStateOf(0)
+    var timerPostsLoading by mutableIntStateOf(0)
+    var isPostsLoading by mutableStateOf(false)
+
     //  init
     init
     {
-        // to do
-        //_friendsDetailList.value = mutableListOf()
+        dbObject = Firebase.database(dbRoot)
+        //dbObject.setPersistenceEnabled(true)
+        dbAuth  = Firebase.auth
+        dbStorage  = Firebase.storage
+    }
+
+    fun toggleMainMenu()
+    {
+        val menuState = !_uiState.value.showMainMenu
+        _uiState.update { AppUiState(showMainMenu = menuState) }
     }
 
     fun updateOpenChat(userID: String)
@@ -222,6 +244,12 @@ class AppViewModel : ViewModel()
         //  get users messages count
         try{
             openChatMsgCount = messagesMap.value.messagesDetails[userID]!!.size
+            if(messagesMap.value.messagesDetails[userID].isNullOrEmpty())
+            {
+                openChatMsgCount = 0
+            }else{
+                messagesMap.value.messagesDetails[userID]!!.size
+            }
         } catch (e:Exception)
         {
             openChatMsgCount = 0
@@ -233,6 +261,10 @@ class AppViewModel : ViewModel()
     fun addPost(post: PostClass)
     {
         var tempList = _postsList.value.postsList
+
+        //  Checks if a list already has an item with a particular key
+        tempList.forEach { if(it.userID == post.userID){return} }
+
         tempList.add(post)
         postsCount = tempList.size
         _postsList.update { PostsInClass(postsList = tempList, postsCount = postsCount) }
@@ -337,10 +369,27 @@ class AppViewModel : ViewModel()
         }
     }
 
-    fun getUserImage(): ImageBitmap
+    fun getUserImageQuick(context: Context): ImageBitmap
     {
-        var path = activityContext.filesDir.absolutePath
-        var fileIn = FileInputStream("${path}/${currentUserUid}")
+        var uid = dbAuth.currentUser!!.uid
+        var path = context.filesDir.absolutePath
+        try{
+            var fileIn = FileInputStream("${path}/${uid}.jpg")
+            var imgBytes = fileIn.readBytes()
+            var tempBitmap = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.size)
+            return tempBitmap.asImageBitmap()
+        }catch (e: Exception)
+        {
+            /**/
+        }
+        return defaultImage!!
+    }
+
+    fun getUserImage(context: Context): ImageBitmap
+    {
+        var uid = dbAuth.currentUser!!.uid
+        var path = context.filesDir.absolutePath
+        var fileIn = FileInputStream("${path}/${uid}.jpg")
         var imgBytes = fileIn.readBytes()
         var tempBitmap = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.size)
         return tempBitmap.asImageBitmap()
@@ -350,12 +399,6 @@ class AppViewModel : ViewModel()
     {
         userProfilePicture = previousProfilePicture
         //updateEdits()
-    }
-
-    fun getDefaultImage(): ImageBitmap
-    {
-        var img = BitmapFactory.decodeResource(activityContext.resources, R.drawable.ellie)
-        return img.asImageBitmap()
     }
 
     fun getField(field: String): String
@@ -625,7 +668,7 @@ class AppViewModel : ViewModel()
         return bytes
     }
 
-    fun uploadProfile(): Int
+    fun uploadProfile(context: Context): Int
     {
         if(dbAuth.currentUser==null){return -1}
         var dbStorageRef = dbStorage.reference
@@ -639,7 +682,7 @@ class AppViewModel : ViewModel()
         userProfileRef.name == profilesRef.name // true
         userProfileRef.path == profilesRef.path
 
-        var streamIn = activityContext.contentResolver.openInputStream(imgUri!!)
+        var streamIn = context.contentResolver.openInputStream(imgUri!!)
         var tempBytes = streamIn!!.readBytes()
 
         //  shrink image
@@ -661,11 +704,11 @@ class AppViewModel : ViewModel()
         return 1
     }
 
-    fun previewProfilePicture()
+    fun previewProfilePicture(context: Context)
     {
         try{
             previousProfilePicture = userProfilePicture
-            var streamIn = activityContext.contentResolver.openInputStream(imgUri!!)
+            var streamIn = context.contentResolver.openInputStream(imgUri!!)
             var tempBytes = streamIn!!.readBytes()
 
             //  shrink image
@@ -770,54 +813,77 @@ class AppViewModel : ViewModel()
     fun attachMJListener(ref: DatabaseReference)
     {
         ref.child("posts").addChildEventListener(postsListener)
+        ref.child("posts").ref.keepSynced(true)
     }
 
     //  signs user in
     @RequiresApi(Build.VERSION_CODES.O)
-    fun signIn(email: String, password: String)
+    fun signIn(email: String, password: String, context: Context)
     {
         isLoading = true
         dbAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(activityThis)
             { task ->
                 if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    Log.d("TAG", "User Sign In:success")
-                    currentUserUid = dbAuth.currentUser!!.uid
-                    attachListeners()
-                    exploreUsers()
-
-                    //getDiscoveredInfo()
-                    //getInitDiscovered()
-                    getUserInfo()
-
-                    //  start the fences
-                    setupFences()
-
-                    //  start app background service
-                    activityContext.startService(serviceIntent)
-                    try{
-                        userProfilePicture = getUserImage()
-                        updateEdits()
-                    }   catch (e: Exception)
-                    {
-                        Log.d("user profile picture", e.message.toString())
-                        getSelfProfilePic()
-                    }
-                    isLoading = false
-                    //sendMessage()
-                    navController.navigate(Destination.ExploreScreen.route)
+                    initHomescreen(context)
                 } else {
                     // If sign in fails, display a message to the user.
                     Log.w("TAG", "User Sign In:failure", task.exception)
-                    Toast.makeText(activityContext, "Authentication failed.", Toast.LENGTH_SHORT).show()
-                    isLoading = false
+                    Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+                    //isLoading = false
                 }
             }
     }
 
+    //  check log in status
+    fun isLoggedIn(): Boolean
+    {
+        return dbAuth.currentUser != null
+    }
+
+    //  initialises all objects while logging in
+    //  gets messages, posts, friends, requests etc
+    fun initHomescreen(context: Context)
+    {
+        // Sign in success, update UI with the signed-in user's information
+        Log.d("TAG", "User Sign In:success")
+        currentUserUid = dbAuth.currentUser!!.uid
+        attachListeners()
+        exploreUsers()
+
+        //getDiscoveredInfo()
+        //getInitDiscovered()
+        getUserInfo()
+
+        //  start app background service
+        //activityContext.startService(serviceIntent)
+        try{
+            userProfilePicture = getUserImage(context)
+            updateEdits()
+        }   catch (e: Exception)
+        {
+            Log.d("user profile picture", e.message.toString())
+            getSelfProfilePic()
+        }
+        isLoading = false
+        navController.navigate(Destination.ExploreScreen.route)
+        //sendMessage()
+    }
+
+    fun initUserProfile(context: Context)
+    {
+        try{
+            userProfilePicture = getUserImage(context)
+            updateEdits()
+        }   catch (e: Exception)
+        {
+            Log.d("user profile picture", e.message.toString())
+            getSelfProfilePic()
+        }
+    }
+
     //  signUp
-    fun signUp(email: String, password: String)
+    fun signUp(email: String, password: String, context: Context)
     {
         dbAuth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(activityThis)
@@ -835,7 +901,7 @@ class AppViewModel : ViewModel()
                 } else {
                     // If sign in fails, display a message to the user.
                     Log.w("TAG", "createUserWithEmail:failure", task.exception)
-                    Toast.makeText(activityContext, "Authentication failed.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
                     //updateUI(null)
                 }
             }
@@ -1032,7 +1098,7 @@ class AppViewModel : ViewModel()
     }
 
     //  send request to discovered user
-    fun sendRequest(userID: String)
+    fun sendRequest(userID: String, context: Context)
     {
         //  out means those coming from outside
         //  in means those made by current user
@@ -1049,7 +1115,7 @@ class AppViewModel : ViewModel()
         var requestInRef = refIn.child("requestsIn").child(currentUserUid)
         requestInRef.setValue(currentUserUid)
 
-        Toast.makeText(activityContext, "request sent", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "request sent", Toast.LENGTH_SHORT).show()
     }
 
     //  check if request available
@@ -1163,6 +1229,10 @@ class AppViewModel : ViewModel()
         ref.child("unfriend").addChildEventListener(unfriendListener)
         ref.child("chats").child("new messages").addChildEventListener(newMessagesListener)
         //zoneRef.child("0").addChildEventListener(discoveredListener)
+        dbObject.reference.child("available zones").child("minor").addChildEventListener(
+            availableMinorListener)
+        dbObject.reference.child("available zones").child("major").addChildEventListener(
+            availableMinorListener)
     }
     var mainRef = dbObject.reference.child("users").child(currentUserUid)
     fun attachMessageListeners(id: String)
@@ -1188,6 +1258,7 @@ class AppViewModel : ViewModel()
 
         var userMessages: MutableList<MessageClass>?
         try{
+            if(messagesUnreadMap.value.messagesUnreadDetails[userID].isNullOrEmpty()){return}
             userMessages = messagesUnreadMap.value.messagesUnreadDetails[userID]
             if(userMessages==null){return}
         }   catch (e:Exception)
@@ -1404,8 +1475,8 @@ class AppViewModel : ViewModel()
 
     fun saveProfileDisk(data: ByteArray)
     {
-        var path = activityContext.filesDir.absolutePath
-        var outFile = FileOutputStream("${ path }/profile.jpg")
+        var path = defaultPath!!
+        var outFile = FileOutputStream("${ path }/${currentUserUid}.jpg")
         outFile.write(data)
         Log.d("path", path)
     }
@@ -1479,7 +1550,7 @@ class AppViewModel : ViewModel()
     }
 
     //  posts messages to major zone board, given you're currently in one
-    fun postToBoard(cat: String, specifier: String, note: String)
+    fun postToBoard(cat: String, specifier: String, note: String, context: Context)
     {
         //  if not in a major zone, return
         if(currentMajorZone==""){return}
@@ -1507,10 +1578,10 @@ class AppViewModel : ViewModel()
             ) {
 
                 if(committed){
-                    Toast.makeText(activityContext, "Post added to board.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Post added to board.", Toast.LENGTH_SHORT).show()
                     Log.d("Post To Board", "Post has been added to board")
                 } else{
-                    Toast.makeText(activityContext, "Failed to Post.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to Post.", Toast.LENGTH_SHORT).show()
                     Log.d("Post To Board", "Failed to post to board")
                 }
             }
@@ -1605,16 +1676,21 @@ class AppViewModel : ViewModel()
             tempList.remove(postIndex)
             postsCount = tempList.size
             _postsList.update { PostsInClass(postsList = tempList, postsCount = postsCount) }
-            Toast.makeText(activityContext, "Post deleted!", Toast.LENGTH_SHORT)
         }
     }
 
-    fun resetPassword(email: String)
+    fun resetPassword(email: String, context: Context)
     {
         dbAuth.sendPasswordResetEmail(email).addOnSuccessListener {
-            Toast.makeText(activityContext ,"Reset email sent.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context,"Reset email sent.", Toast.LENGTH_SHORT).show()
         }
     }
+
+    /*fun getDefaultImage(): ImageBitmap
+    {
+        val img = BitmapFactory.decodeResource(appViewModel.localContext!!.resources, R.drawable.default_profile_ps)
+        return img.asImageBitmap()
+    }*/
 
     /*//  retrieves requests for current user
     @RequiresApi(Build.VERSION_CODES.O)

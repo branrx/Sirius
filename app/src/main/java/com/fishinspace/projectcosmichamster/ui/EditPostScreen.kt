@@ -1,9 +1,6 @@
 package com.fishinspace.projectcosmichamster.ui
 
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,15 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,20 +26,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fishinspace.projectcosmichamster.Destination
 import com.fishinspace.projectcosmichamster.R
-import com.fishinspace.projectcosmichamster.activityContext
 import com.fishinspace.projectcosmichamster.appViewModel
 import com.fishinspace.projectcosmichamster.navController
 
@@ -57,6 +46,7 @@ fun EditPostScreen()
     var postCategory by remember { mutableStateOf(appViewModel.postEditCategory) }
     var postCategoryDescription by remember { mutableStateOf(appViewModel.postEditSpecifier) }
     var postDescription by remember { mutableStateOf(appViewModel.postEditNote) }
+    var context = LocalContext.current
 
     var selectedCat by remember { mutableStateOf(catOptions.indexOf(postCategory)) }
     var selectedSpe by remember { mutableStateOf(specificOptions[selectedCat]?.indexOf(postCategoryDescription)) }
@@ -179,10 +169,11 @@ fun EditPostScreen()
                 if(postDescription.isNotEmpty())
                 {
                     //  passes the cat, specifier and note
-                    appViewModel.postToBoard(catOptions[selectedCat], specificOptions[selectedCat]!![selectedSpe!!.toInt()], postDescription)
+                    appViewModel.postToBoard(catOptions[selectedCat], specificOptions[selectedCat]!![selectedSpe!!.toInt()],
+                        postDescription, context)
                     navController.navigate(Destination.ExploreScreen.route)
                 }else{
-                    Toast.makeText(activityContext ,"Post message cannot be empty", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,"Post message cannot be empty", Toast.LENGTH_SHORT).show()
                 }
             }, modifier = Modifier
                 .weight(0.7f)
